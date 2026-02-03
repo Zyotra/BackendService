@@ -63,7 +63,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         ssh = new SSHClient({
             host: vpsIp,
             port: 22,
-            username: credentials.vps_name || "root",
+            username: "root",
             password: vpsPassword,
             readyTimeout: 120000,  // 120 second timeout for initial handshake
             keepaliveInterval: 30000,  // Send keep-alive every 30 seconds

@@ -46,7 +46,9 @@ const startNewRedis = async ({ body, set, userId }: Context | any) => {
         })
         await ssh.connect()
         redis = new RedisHelper(ssh)
+        // Install redis-server and dependencies properly
         await redis.installRedisCLI();
+        // Start the new Redis server
         const result = await redis.startNewRedisServer(name, password, port)
         console.log("Redis start result:", result)
         await db.insert(caching).values({

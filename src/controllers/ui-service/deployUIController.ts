@@ -60,7 +60,7 @@ const deployUIController = async ({ body, set }: Context) => {
         ssh = new SSHClient({
             host: vpsIp,
             port: 22,
-            username: credentials.vps_name || "root",
+            username: "root",
             password: vpsPassword
         })
         await ssh.connect();

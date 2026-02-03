@@ -9,24 +9,36 @@ import SSHClient from "../SSHClient/SSHClient";
 
 async function installDependencies(ssh: SSHClient, framework: string, deploymentId?: string): Promise<boolean> {
     let result: boolean
+    const frameworkLower = framework.toLowerCase();
     try {
-        if (framework.toLowerCase() == "nodejs" || framework.toLowerCase() == "express" || framework.toLowerCase() == "nextjs" || framework.toLowerCase() == "nestjs" || framework.toLowerCase() == "bunjs" || framework.toLowerCase() == "elysia-js") {
+        // JavaScript/Node.js based frameworks (both backend and frontend)
+        const jsFrameworks = [
+            "nodejs", "express", "nextjs", "nestjs", "bunjs", "elysia-js",
+            // Frontend frameworks that need Node.js for building
+            "react", "vue", "angular", "svelte", "nuxtjs", "gatsby", "vite", "other"
+        ];
+        
+        if (jsFrameworks.includes(frameworkLower)) {
             result = await jsDepedenciesInstaller(ssh)
-        } else if (framework.toLowerCase() == "python" || framework.toLowerCase() == "django" || framework.toLowerCase() == "flask" || framework.toLowerCase() == "fastapi" || framework.toLowerCase() == "flask-restful" || framework.toLowerCase() == "dotenv") {
+        } else if (frameworkLower == "python" || frameworkLower == "django" || frameworkLower == "flask" || frameworkLower == "fastapi" || frameworkLower == "flask-restful" || frameworkLower == "dotenv") {
             result = await installPythonDependencies(ssh)
-        } else if (framework.toLowerCase() === "docker") {
+        } else if (frameworkLower === "docker") {
             result = await dockerDepedenciesInstaller(ssh);
-        } else if (framework.toLowerCase() === "spring-boot" || framework.toLowerCase() === "spring boot" || framework.toLowerCase() === "springboot") {
+        } else if (frameworkLower === "spring-boot" || frameworkLower === "spring boot" || frameworkLower === "springboot") {
             result = await installSpringBootDependencies(ssh);
-        } else if (framework.toLowerCase() === "rust") {
+        } else if (frameworkLower === "rust") {
             result = await installRustDependencies(ssh);
-        } else if (framework.toLowerCase() === "go" || framework.toLowerCase() === "golang") {
+        } else if (frameworkLower === "go" || frameworkLower === "golang") {
             result = await installGoDependencies(ssh);
-        } else if (framework.toLowerCase() === "dotnet" || framework.toLowerCase() === ".net" || framework.toLowerCase() === "csharp" || framework.toLowerCase() === "aspnet" || framework.toLowerCase() === "asp.net") {
+        } else if (frameworkLower === "dotnet" || frameworkLower === ".net" || frameworkLower === "csharp" || frameworkLower === "aspnet" || frameworkLower === "asp.net") {
             result = await installDotnetDependencies(ssh, deploymentId);
+        } else if (frameworkLower === "plainhtml" || frameworkLower === "htmlcssjs" || frameworkLower === "html") {
+            // Plain HTML doesn't need any dependencies - just nginx which should already be installed
+            result = true;
         }
         else {
-            result = false
+            console.log(`Unknown framework: ${framework}, attempting JS dependencies as fallback`);
+            result = await jsDepedenciesInstaller(ssh);
         }
         return result;
 
