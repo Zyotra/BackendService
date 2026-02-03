@@ -2,9 +2,8 @@ import { Context } from "elysia";
 import SSHClient from "../../../SSHClient/SSHClient";
 import MySQLHelper from "../../../HelperClasses/mySQLHelper";
 import { StatusCode } from "../../../types/types";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "./deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
-
 
 const runMySQLQuery = async ({ body, set, userId }: Context | any) => {
   const req = body as {

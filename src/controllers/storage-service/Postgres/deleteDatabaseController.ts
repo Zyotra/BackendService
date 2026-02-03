@@ -1,6 +1,6 @@
 import {Context} from "elysia";
 import {StatusCode} from "../../../types/types";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "../MySQL/deployMySQL";
 import SSHClient from "../../../SSHClient/SSHClient";
 import decryptPassword from "../../../utils/decryptPassword";
 import {PostgresSSHHelper} from "../../../HelperClasses/PostgresHelper";

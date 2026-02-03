@@ -1,11 +1,9 @@
 import { Context } from "elysia";
 import { StatusCode } from "../../../types/types";
 import SSHClient from "../../../SSHClient/SSHClient";
-import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "./deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 import MySQLHelper from "../../../HelperClasses/mySQLHelper";
-import { password } from "bun";
 
 const getMySQLTableData=async({body,set,userId}:Context | any)=>{
     const req=body as {databaseName:string,vpsId:string,vpsIp:string,tableName:string,username:string,password:string};

@@ -1,9 +1,6 @@
 import { Context } from "elysia";
 import { StatusCode } from "../../../types/types";
-import { deployed_db } from "../../../db/schema";
-import { eq } from "drizzle-orm";
-import { db } from "../../../db/client";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "../MySQL/deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 import SSHClient from "../../../SSHClient/SSHClient";
 import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";

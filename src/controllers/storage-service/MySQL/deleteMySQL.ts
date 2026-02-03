@@ -6,7 +6,7 @@ import decryptVpsPassword from "../../../utils/decryptPassword";
 import { db } from "../../../db/client";
 import { deployed_db } from "../../../db/schema";
 import { and, eq } from "drizzle-orm";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "./deployMySQL";
 const deleteMySQL=async({body,set,userId}:Context | any)=>{
     const req = body as { vpsId: string,vpsIp:string, dbName: string,userName:string, password: string,rootPassword:string };
     const {vpsId,vpsIp,dbName,userName,password,rootPassword} = req;

@@ -1,7 +1,7 @@
 import { Context } from "elysia";
 import SSHClient from "../../../SSHClient/SSHClient";
 import { StatusCode } from "../../../types/types";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "./deployMySQL";
 import MySQLHelper from "../../../HelperClasses/mySQLHelper";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 

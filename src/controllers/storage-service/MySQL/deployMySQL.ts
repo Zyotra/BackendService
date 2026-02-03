@@ -1,11 +1,33 @@
 import { Context } from "elysia";
 import { StatusCode } from "../../../types/types";
-import verifyMachine from "../../../utils/verifyMachine";
 import MySQLHelper from "../../../HelperClasses/mySQLHelper";
+import pool from "../../../db/pool";
 import SSHClient from "../../../SSHClient/SSHClient";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 import { db } from "../../../db/client";
 import { deployed_db } from "../../../db/schema";
+
+export const verifyMachine=async (machineId:string,userId:string,machineIp:string)=>{
+    const res=await pool.query('SELECT * FROM vps_machines WHERE id=$1 AND "ownerId"=$2',[machineId,userId]);
+    if(res.rowCount===0){
+        return {
+            status:false,
+            machine:null
+        };
+    }
+    const machine=res.rows[0];
+    if(machine.vps_ip!==machineIp){
+        return {
+            status:false,
+            machine:null
+        }
+    }
+    return {
+        status:true,
+        machine
+    }
+}
+
 const deployMySQL=async({body,set,userId}:Context | any)=>{
     const req = body as { vpsId: string,vpsIp:string, dbName: string,userName:string, password: string,rootPassword:string };
     const {vpsId,vpsIp,dbName,userName,password,rootPassword} = req;

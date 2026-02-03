@@ -2,7 +2,7 @@ import { Context } from "elysia";
 import SSHClient from "../../../SSHClient/SSHClient";
 import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
 import { StatusCode } from "../../../types/types";
-import verifyMachine from "../../../utils/verifyMachine";
+import { verifyMachine } from "../MySQL/deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 
 const getTableData=async({set,body,userId}:Context | any)=>{

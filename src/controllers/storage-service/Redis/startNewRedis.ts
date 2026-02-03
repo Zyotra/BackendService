@@ -1,5 +1,5 @@
 import { Context } from "elysia"
-import verifyMachine from "../../../utils/verifyMachine"
+import { verifyMachine } from "../MySQL/deployMySQL";
 import { StatusCode } from "../../../types/types";
 import SSHClient from "../../../SSHClient/SSHClient";
 import decryptVpsPassword from "../../../utils/decryptPassword";
