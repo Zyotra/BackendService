@@ -1,0 +1,34 @@
+{
+  "name": "DeploymentService",
+  "version": "1.0.50",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "bun run --watch src/index.ts",
+    "generate": "bun x drizzle-kit generate",
+    "migrate": "bun x drizzle-kit migrate",
+    "build": "bun build src/index.ts --outdir dist --target=bun"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.943.0",
+    "@aws-sdk/s3-request-presigner": "^3.946.0",
+    "@elysiajs/cors": "^1.4.0",
+    "@types/crypto-js": "^4.2.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.15.6",
+    "@types/ssh2": "^1.15.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.8",
+    "drizzle-orm": "^0.45.1",
+    "elysia": "latest",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.7",
+    "simple-git": "^3.30.0",
+    "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "module": "src/index.js"
+}
