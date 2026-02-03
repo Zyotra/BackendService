@@ -1,40 +1,46 @@
-import {Context} from "elysia";
-import {StatusCode} from "../../../types/types";
+import { Context } from "elysia";
+import { StatusCode } from "../../../types/types";
 import { verifyMachine } from "../MySQL/deployMySQL";
 import SSHClient from "../../../SSHClient/SSHClient";
 import decryptPassword from "../../../utils/decryptPassword";
-import {PostgresSSHHelper} from "../../../HelperClasses/PostgresHelper";
+import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
 import { deployed_db } from "../../../db/schema";
 import { db } from "../../../db/client";
 import { eq } from "drizzle-orm";
 
-const deleteDatabaseController=async({body,params,set,userId}:Context | any)=>{
-    const req=body as {dbName:string,vpsIp:string,vpsId:string}
-    const databaseId=params.id;
-    var ssh:SSHClient | null =null;
-    if(!databaseId){
-        set.status=StatusCode.BAD_REQUEST;
+const deleteDatabaseController = async ({ body, params, set, userId }: Context | any) => {
+    const req = body as { dbName: string, vpsIp: string, vpsId: string }
+    const databaseId = params.id;
+    var ssh: SSHClient | null = null;
+    if (!databaseId) {
+        set.status = StatusCode.BAD_REQUEST;
         return {
-            message:"Database ID is required"
+            message: "Database ID is required"
         }
     }
-    const database=await db.select().from(deployed_db).where(eq(deployed_db.id,databaseId));
-    if(!database){
-        set.status=StatusCode.NOT_FOUND;
+    const database = await db.select().from(deployed_db).where(eq(deployed_db.id, databaseId));
+    if (!database) {
+        set.status = StatusCode.NOT_FOUND;
         return {
-            message:"Database not found"
+            message: "Database not found"
         }
     }
-    const vpsId=database[0].vpsId;
-    const vpsIp=database[0].host;
-    const isMachineVerified=await verifyMachine(vpsId.toString(),userId,vpsIp);
-    if(!isMachineVerified.status){
-        set.status=StatusCode.FORBIDDEN;
+    const vpsId = database[0].vpsId;
+    const vpsIp = database[0].host;
+    const isMachineVerified = await verifyMachine(vpsId.toString(), userId, vpsIp);
+    if (!isMachineVerified.status) {
+        set.status = StatusCode.FORBIDDEN;
         return {
-            message:"Unauthorized access for the machine"
+            message: "Unauthorized access for the machine"
         }
     }
-    const {machine}=isMachineVerified;
+    const { machine } = isMachineVerified;
+    if (!machine) {
+        set.status = StatusCode.FORBIDDEN
+        return {
+            message: "Machine verification failed"
+        }
+    }
     try {
         const hashedPassword = await decryptPassword(machine.vps_password);
         ssh = new SSHClient({
@@ -45,20 +51,20 @@ const deleteDatabaseController=async({body,params,set,userId}:Context | any)=>{
         await ssh.connect();
         const pgHelper = new PostgresSSHHelper(ssh);
         await pgHelper.dropDatabase(database[0].dbName);
-        await db.delete(deployed_db).where(eq(deployed_db.id,databaseId));
+        await db.delete(deployed_db).where(eq(deployed_db.id, databaseId));
         await ssh.close();
         return {
             status: StatusCode.OK,
             message: "Database deleted successfully"
         }
-    }catch (error) {
-        set.status=StatusCode.INTERNAL_SERVER_ERROR;
+    } catch (error) {
+        set.status = StatusCode.INTERNAL_SERVER_ERROR;
         return {
-            status:"invalid request",
+            status: "invalid request",
             message: error
         }
-    }finally{
-        if(ssh){
+    } finally {
+        if (ssh) {
             ssh.close();
         }
     }

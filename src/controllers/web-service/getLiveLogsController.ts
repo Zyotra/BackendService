@@ -1,9 +1,8 @@
 import { Context } from "elysia";
 import { StatusCode } from "../../types/types";
 import { db } from "../../db/client";
-import { deployments } from "../../db/schema";
+import { deployments, vpsMachines } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
-import pool from "../../db/pool";
 import decryptVpsPassword from "../../utils/decryptPassword";
 import SSHClient from "../../SSHClient/SSHClient";
 import getRepoName from "../../repoActions/getRepoName";
@@ -20,20 +19,17 @@ const getLiveLogsController = async ({ params, set, userId, body }: Context | an
             return { message: "Project not found" };
         }
         
-        const vpsMachine = await pool.query(
-            `SELECT * FROM vps_machines WHERE vps_ip = $1 AND "ownerId" = $2`,
-            [project[0].vpsIp, userId]
-        );
+        const vpsMachine = await db.select().from(vpsMachines).where(and(eq(vpsMachines.vps_ip, project[0].vpsIp), eq(vpsMachines.ownerId, userId)))    
         
-        if (!vpsMachine.rows || vpsMachine.rows.length === 0) {
+        if (!vpsMachine || vpsMachine.length === 0) {
             set.status = StatusCode.NOT_FOUND;
             return { message: "VPS Machine not found" };
         }
         
-        const hashedPassword = await decryptVpsPassword(vpsMachine.rows[0].vps_password);
+        const hashedPassword = await decryptVpsPassword(vpsMachine[0].vps_password);
         const ssh = new SSHClient({
             username: "root",
-            host: vpsMachine.rows[0].vps_ip,
+            host: vpsMachine[0].vps_ip,
             password: hashedPassword,
         });
         

@@ -12,8 +12,8 @@ import injectNginxConfig from "../../repoActions/injectNginxConfig"
 import cleanDirectory from "../../repoActions/cleanDirectory"
 import enableSSLDomain from "../../repoActions/enableDomain"
 import getPort from "../../repoActions/getPort"
-import saveActivity from "../../db/saveActivity"
-import checkDomainValidity from "../../db/checkDomainValidity"
+import saveActivity from "../../utils/saveActivity"
+import checkDomainValidity from "../../utils/checkDomainValidity"
 import cloneRepo from "../../repoActions/cloneRepo"
 import installDependencies from "../../repoActions/installDepedencies"
 import socketManager from "../../ws/socketManager"
@@ -63,7 +63,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         ssh = new SSHClient({
             host: vpsIp,
             port: 22,
-            username: credentials.vps_username || "root",
+            username: credentials.vps_name || "root",
             password: vpsPassword,
             readyTimeout: 120000,  // 120 second timeout for initial handshake
             keepaliveInterval: 30000,  // Send keep-alive every 30 seconds
@@ -87,7 +87,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         const isDependenciesInstalled = await installDependencies(ssh, framework);
         console.log("Dependencies installed for framework", framework, ":", isDependenciesInstalled);
         if (!isDependenciesInstalled) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to install dependencies on VPS.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to install dependencies on VPS.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             set.status = StatusCode.INTERNAL_SERVER_ERROR
             return {
                 status: "error",
@@ -102,7 +102,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         console.log("Starting to clone the repository:", repoUrl + " into " + dirName);
         const isRepoCloned = await cloneRepo(ssh, repoUrl, deploymentId);
         if (!isRepoCloned) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone the repository.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone the repository.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             await cleanDirectory(ssh, getRepoName(repoUrl))
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -115,7 +115,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
             console.log("Injecting environment variables into the repository at", dirName);
             const isEnvInjected = await injectEnv(ssh, env, dirName, deploymentId, framework)
             if (!isEnvInjected) {
-                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject environment variables.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+                await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject environment variables.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
                 await cleanDirectory(ssh, getRepoName(repoUrl))
                 set.status = StatusCode.BAD_REQUEST
                 return {
@@ -145,7 +145,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
                 await safeSaveLog(deploymentId, logChunk, ssh);
             });
             if (!isDockerDeployed) {
-                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to build Docker container.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+                await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to build Docker container.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
                 await cleanDirectory(ssh, getRepoName(repoUrl))
                 set.status = StatusCode.BAD_REQUEST
                 return {
@@ -160,7 +160,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
             const nginxConfig = getServerConfig(domain, port);
             const isNginxConfigInjected = await injectNginxConfig(ssh, nginxConfig, domain, deploymentId);
             if (!isNginxConfigInjected) {
-                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject Nginx configuration.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+                await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject Nginx configuration.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
                 await cleanDirectory(ssh, getRepoName(repoUrl))
                 await cleanDirectory(ssh, `/etc/nginx/sites-available/${domain}`)
                 await cleanDirectory(ssh, `/etc/nginx/sites-enabled/${domain}`)
@@ -172,7 +172,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
             }
             const isDomainEnabled = await enableSSLDomain(ssh, domain, deploymentId);
             if (!isDomainEnabled) {
-                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to enable domain in Nginx.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+                await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to enable domain in Nginx.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
                 await cleanDirectory(ssh, getRepoName(repoUrl))
                 await cleanDirectory(ssh, `/etc/nginx/sites-available/${domain}`)
                 await cleanDirectory(ssh, `/etc/nginx/sites-enabled/${domain}`)
@@ -182,7 +182,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
                     message: "Failed to enable domain in Nginx."
                 }
             }
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "SUCCESS", repoUrl, "Web service deployed successfully.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "SUCCESS", repoUrl, "Web service deployed successfully.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             return {
                 status: "success",
                 message: "Deployment finished",
@@ -192,7 +192,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         }
         const isRepoBuilt = await buildRepo(ssh, repoUrl, deploymentId, packageInstallerCommand, dirName, buildCommand);
         if (!isRepoBuilt) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone or build the repository.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone or build the repository.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             await cleanDirectory(ssh, getRepoName(repoUrl))
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -203,7 +203,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
 
         const isRepoRunning = await startWebService(ssh, dirName, serverFilePath, deploymentId, framework, env);
         if (!isRepoRunning) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to start the web service.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to start the web service.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await ssh.exec(`pm2 delete ${dirName}`)
             set.status = StatusCode.INTERNAL_SERVER_ERROR
@@ -220,7 +220,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         const nginxConfig = useHttpOnly ? getHttpServerConfig(domain, port) : getServerConfig(domain, port);
         const isNginxConfigInjected = await injectNginxConfig(ssh, nginxConfig, domain, deploymentId);
         if (!isNginxConfigInjected) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject Nginx configuration.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject Nginx configuration.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await cleanDirectory(ssh, `/etc/nginx/sites-available/${domain}`)
             await cleanDirectory(ssh, `/etc/nginx/sites-enabled/${domain}`)
@@ -233,7 +233,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         }
         const isDomainEnabled = await enableSSLDomain(ssh, domain, deploymentId);
         if (!isDomainEnabled) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to enable domain in Nginx.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to enable domain in Nginx.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await cleanDirectory(ssh, `/etc/nginx/sites-available/${domain}`)
             await cleanDirectory(ssh, `/etc/nginx/sites-enabled/${domain}`)
@@ -244,7 +244,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
                 message: "Failed to enable domain in Nginx."
             }
         }
-        await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "SUCCESS", repoUrl, "Web service deployed successfully.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
+        await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "SUCCESS", repoUrl, "Web service deployed successfully.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
         return {
             status: "success",
             message: "Deployment finished",

@@ -1,8 +1,8 @@
-import { db } from "./client";
-import { activityLogs, deployments } from "./schema";
+import { eq } from "drizzle-orm/sql/expressions/conditions";
+import { db } from "../db/client";
+import { activityLogs,deployments, userDomains} from "../db/schema";
 import { DeploymentStatus } from "../types/types";
-import pool from "./pool";
-const saveActivity = async (userId: number,deploymentId:string,vpsIp:string,domain:string,status:DeploymentStatus,repoUrl:string,log: string,framework:string,buildCommand:string,packageInstallerCommand:string,serverFilePath:string,sourceDir?:string) => {
+const saveActivity = async (userId: number,deploymentId:string,vpsIp:string,domain:string,status:DeploymentStatus,repoUrl:string,log: string,framework:string,buildCommand:string,packageInstallerCommand:string,serverFilePath:string,sourceDir?:string,projectType?:string) => {
     try {
         console.log("Saving activity data:", log);
         //using traction to add both webservicedeployment data and activity logs
@@ -14,7 +14,7 @@ const saveActivity = async (userId: number,deploymentId:string,vpsIp:string,doma
                 repoUrl:repoUrl,
                 vpsIp: vpsIp,
                 framework:framework,
-                projectType:"WebService",
+                projectType:projectType || "WebService",
                 domain: domain,
                 buildCommand:buildCommand,
                 packageInstallerCommand:packageInstallerCommand,
@@ -32,7 +32,7 @@ const saveActivity = async (userId: number,deploymentId:string,vpsIp:string,doma
         })
         if(status=="SUCCESS"){
             console.log("Activity saved with SUCCESS status for deployment ID:", deploymentId);
-            await pool.query(`UPDATE user_domains SET is_deployed = $1 WHERE domain_address = $2`, [1, domain]);
+            await db.update(userDomains).set({isDeployed:1}).where(eq(userDomains.domain_address, domain));
         }
         return true;
     } catch (error) {

@@ -66,4 +66,68 @@ server {
     }
 }
 `;
+
+export const getServerConfigFrontend = (domain: string, folderName: string) => `
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${domain} www.${domain};
+
+    root /var/www/${folderName};
+    index index.html;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types
+        text/plain
+        text/css
+        application/javascript
+        application/json
+        image/svg+xml;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # SPA fallback (THIS is what makes /register work)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Static assets caching
+    location ~* \\.(jpg|jpeg|png|gif|ico|svg|webp)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~* \\.(css|js)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~* \\.(woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Access-Control-Allow-Origin "*";
+    }
+
+    # No cache for HTML
+    location ~* \\.html$ {
+        expires -1;
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+    }
+
+    # Deny access to hidden files (note the double backslash)
+    location ~ /\\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    access_log /var/log/nginx/${folderName}_access.log;
+    error_log /var/log/nginx/${folderName}_error.log;
+}
+`;
+
 export default getServerConfig;

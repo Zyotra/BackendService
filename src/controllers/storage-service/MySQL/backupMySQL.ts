@@ -13,6 +13,13 @@ const backupMySQL = async ({ body, set, userId }: Context | any) => {
     try {
         const isMachineVerified = await verifyMachine(vpsId, userId, vpsIp)
         const { machine } = isMachineVerified;
+        if(!machine){
+            set.status = StatusCode.NOT_FOUND
+            return {
+                status: "error",
+                message: "VPS Machine not found"
+            }
+        }
         const hashedPassword = await decryptVpsPassword(machine.vps_password)
         ssh = new SSHClient({
             username: "root",

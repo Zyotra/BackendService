@@ -3,13 +3,11 @@ import { Context } from "elysia";
 import { activityLogs, deployments } from "../../db/schema";
 import { db } from "../../db/client";
 import { StatusCode } from "../../types/types";
-import pool from "../../db/pool";
 import getMachineDetail from "../../utils/getMachineDetail";
 import SSHClient from "../../SSHClient/SSHClient";
 import getRepoName from "../../repoActions/getRepoName";
-import { enc } from "crypto-js";
 import decryptVpsPassword from "../../utils/decryptPassword";
-import unLinkDomain from "../../db/unlinkDomain";
+import unLinkDomain from "../../utils/unlinkDomain";
 
 const deleteProjectsController = async ({ set, params, userId }: Context | any) => {
     try {

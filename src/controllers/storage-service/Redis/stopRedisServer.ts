@@ -32,6 +32,12 @@ const stopRedisServer = async ({ body, set, userId }: Context | any) => {
   var ssh: SSHClient | null = null;
   var redis: RedisHelper | null = null;
   const { machine } = isMachineVerified;
+  if (!machine) {
+    set.status = StatusCode.FORBIDDEN
+    return {
+      message: "Machine verification failed"
+    }
+  }
   try {
     const hashedPassword = await decryptVpsPassword(machine.vps_password);
     ssh = new SSHClient({
@@ -45,7 +51,7 @@ const stopRedisServer = async ({ body, set, userId }: Context | any) => {
     await db
       .update(caching)
       .set({ status: "stopped" })
-      .where(and(eq(caching.host, vpsIp),eq(caching.port,parseInt(port))));
+      .where(and(eq(caching.host, vpsIp), eq(caching.port, parseInt(port))));
     set.status = StatusCode.OK;
     return {
       message: "Stopped redis server",

@@ -32,6 +32,12 @@ const deleteRedisServer = async ({ body, set, userId }: Context | any) => {
   var ssh: SSHClient | null = null;
   var redis: RedisHelper | null = null;
   const { machine } = isMachineVerified;
+  if (!machine) {
+    set.status = StatusCode.FORBIDDEN
+    return {
+      message: "Machine verification failed"
+    }
+  }
   try {
     const hashedPassword = await decryptVpsPassword(machine.vps_password);
     ssh = new SSHClient({
@@ -57,7 +63,7 @@ const deleteRedisServer = async ({ body, set, userId }: Context | any) => {
     };
   } finally {
     if (ssh) {
-      ssh.close();
+      await ssh.close();
     }
   }
 };

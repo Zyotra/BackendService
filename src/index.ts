@@ -53,21 +53,31 @@ import stopPostgresController from "./controllers/deployment-manager/Storage/sto
 import startRedisController from "./controllers/deployment-manager/Storage/startRedisController";
 import stopRedisController from "./controllers/deployment-manager/Storage/stopRedisController";
 import createSwapMemoryController from "./controllers/deployment-manager/Storage/createSwapMemoryController";
+import loginController from "./controllers/auth-service/loginController";
+import registerController from "./controllers/auth-service/registerController";
+import sendOtpController from "./controllers/auth-service/sendOtpController";
+import getAccessTokenController from "./controllers/auth-service/getAccessTokenController";
+import dashboardController from "./controllers/auth-service/dashboardController";
 config();
 const app = new Elysia()
 app.use(cors({
-  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud","https://portal.zyotra.com"],
+  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud", "https://portal.zyotra.com"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
-app.get("/", ({ set }) => {
-  set.status = StatusCode.OK
-  return {
-    status: "success",
-    message: "Deployment Service Backend of Zyotra is running.",
-    Time: new Date().toISOString()
-  }
-})
+app
+  .get("/", ({ set }) => {
+    set.status = StatusCode.OK
+    return {
+      status: "success",
+      message: "Deployment Service Backend of Zyotra is running.",
+      Time: new Date().toISOString()
+    }
+  })
+  .post("/login",loginController)
+  .post("/register",registerController)
+  .post("/send-otp", sendOtpController)
+  .get("/get-access-token",getAccessTokenController);
 app
   .ws("/deploy-logs", {
     async open(ws) {
@@ -134,6 +144,7 @@ app
   })
 app
   .use(checkAuthPlugin)
+  .get("/dashboard",dashboardController)
   .post("/deploy-webservice", deployWebServiceController)
   .get("/get-projects", getProjectsController)
   .delete("/delete-project/:id", deleteProjectsController)

@@ -35,6 +35,12 @@ const runMySQLQuery = async ({ body, set, userId }: Context | any) => {
     };
   }
   const { machine } = isMachineVerified;
+  if(!machine){
+        set.status=StatusCode.FORBIDDEN
+        return{
+            message:"Machine verification failed"
+        }
+    }
   const hashedPassword = await decryptVpsPassword(machine.vps_password);
   console.log("password hashed creating ssh");
   console.log(machine);

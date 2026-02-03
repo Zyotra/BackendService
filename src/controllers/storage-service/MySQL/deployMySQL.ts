@@ -1,21 +1,21 @@
 import { Context } from "elysia";
 import { StatusCode } from "../../../types/types";
 import MySQLHelper from "../../../HelperClasses/mySQLHelper";
-import pool from "../../../db/pool";
 import SSHClient from "../../../SSHClient/SSHClient";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 import { db } from "../../../db/client";
-import { deployed_db } from "../../../db/schema";
+import { deployed_db, vpsMachines } from "../../../db/schema";
+import { and, eq } from "drizzle-orm";
 
 export const verifyMachine=async (machineId:string,userId:string,machineIp:string)=>{
-    const res=await pool.query('SELECT * FROM vps_machines WHERE id=$1 AND "ownerId"=$2',[machineId,userId]);
-    if(res.rowCount===0){
+    const res=await db.select().from(vpsMachines).where(and(eq(vpsMachines.id,parseInt(machineId)),eq(vpsMachines.ownerId,parseInt(userId))));
+    if(res.length<=0){
         return {
             status:false,
             machine:null
         };
     }
-    const machine=res.rows[0];
+    const machine=res[0];
     if(machine.vps_ip!==machineIp){
         return {
             status:false,
@@ -38,7 +38,7 @@ const deployMySQL=async({body,set,userId}:Context | any)=>{
         }
     }
     const isMachineVerified=await verifyMachine(vpsId,userId,vpsIp);
-    if(!isMachineVerified.status){
+    if(!isMachineVerified.status || !isMachineVerified){
         set.status = StatusCode.FORBIDDEN;
         return {
             message: "Unauthorized access for the machine"
@@ -47,6 +47,12 @@ const deployMySQL=async({body,set,userId}:Context | any)=>{
     var ssh:SSHClient | null =null
     var sqlHelper:MySQLHelper | null =null
     const {machine}=isMachineVerified;
+    if(!machine){
+        set.status=StatusCode.FORBIDDEN
+        return{
+            message:"Machine verification failed"
+        }
+    }
     try {
         const hashedPassword=await decryptVpsPassword(machine.vps_password)
         ssh=new SSHClient({
