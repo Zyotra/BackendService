@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import { db } from "../db/client";
-import { login_Sessions } from "../db/schema";
+import { db } from "../../db/client";
+import { login_Sessions } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export const verifyAccessToken = async (token: string)=> {

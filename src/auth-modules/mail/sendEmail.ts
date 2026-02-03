@@ -1,7 +1,7 @@
 import nodemailer, { Transporter } from "nodemailer";
 import generateOtpEmailContent from "./getEmailContent";
-import { db } from "../db/client";
-import { otps } from "../db/schema";
+import { db } from "../../db/client";
+import { otps } from "../../db/schema";
 import generateOtp from "./generateOtp";
 
 interface SendEmailOptions {
