@@ -56,7 +56,7 @@ import createSwapMemoryController from "./controllers/deployment-manager/Storage
 config();
 const app = new Elysia()
 app.use(cors({
-  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud"],
+  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud","https://portal.zyotra.com"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
