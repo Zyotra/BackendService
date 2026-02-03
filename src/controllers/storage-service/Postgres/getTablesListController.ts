@@ -1,13 +1,13 @@
 import { Context } from "elysia";
-import { StatusCode } from "../types/types";
-import { deployed_db } from "../db/schema";
+import { StatusCode } from "../../../types/types";
+import { deployed_db } from "../../../db/schema";
 import { eq } from "drizzle-orm";
-import { db } from "../db/client";
-import verifyMachine from "../utils/verifyMachine";
-import decryptVpsPassword from "../utils/decryptPassword";
-import SSHClient from "../SSHClient/SSHClient";
-import { PostgresSSHHelper } from "../HelperClasses/PostgresHelper";
-import parseTableNames from "../utils/parseTableNames";
+import { db } from "../../../db/client";
+import verifyMachine from "../../../utils/verifyMachine";
+import decryptVpsPassword from "../../../utils/decryptPassword";
+import SSHClient from "../../../SSHClient/SSHClient";
+import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
+import parseTableNames from "../../../utils/parseTableNames";
 const getTablesListController=async({body,set,userId}:Context | any)=>{
     const req=body as {databaseName:string,vpsId:string,vpsIp:string,username:string};
     const {databaseName,vpsId,vpsIp,username}=req;

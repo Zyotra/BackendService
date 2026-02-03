@@ -1,9 +1,9 @@
 import { Context } from "elysia";
-import SSHClient from "../SSHClient/SSHClient";
-import { PostgresSSHHelper } from "../HelperClasses/PostgresHelper";
-import { StatusCode } from "../types/types";
-import verifyMachine from "../utils/verifyMachine";
-import decryptVpsPassword from "../utils/decryptPassword";
+import SSHClient from "../../../SSHClient/SSHClient";
+import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
+import { StatusCode } from "../../../types/types";
+import verifyMachine from "../../../utils/verifyMachine";
+import decryptVpsPassword from "../../../utils/decryptPassword";
 
 const getTableData=async({set,body,userId}:Context | any)=>{
     const req=body as {databaseName:string,vpsId:string,vpsIp:string,tableName:string,username:string};

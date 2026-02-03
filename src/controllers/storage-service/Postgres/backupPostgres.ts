@@ -1,9 +1,9 @@
 import { Context } from "elysia";
-import SSHClient from "../SSHClient/SSHClient";
-import { PostgresSSHHelper } from "../HelperClasses/PostgresHelper";
-import verifyMachine from "../utils/verifyMachine";
-import decryptVpsPassword from "../utils/decryptPassword";
-import { StatusCode } from "../types/types";
+import SSHClient from "../../../SSHClient/SSHClient";
+import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
+import verifyMachine from "../../../utils/verifyMachine";
+import decryptVpsPassword from "../../../utils/decryptPassword";
+import { StatusCode } from "../../../types/types";
 
 const backupPostgres = async ({ body, set, userId }: Context | any) => {
     const req=body as {username:string,password:string,databaseName:string,vpsId:string,vpsIp:string};

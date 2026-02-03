@@ -1,9 +1,9 @@
 import { Context } from "elysia";
-import SSHClient from "../../SSHClient/SSHClient";
-import { StatusCode } from "../../types/types";
-import verifyMachine from "../../utils/verifyMachine";
-import MySQLHelper from "../../HelperClasses/mySQLHelper";
-import decryptVpsPassword from "../../utils/decryptPassword";
+import SSHClient from "../../../SSHClient/SSHClient";
+import { StatusCode } from "../../../types/types";
+import verifyMachine from "../../../utils/verifyMachine";
+import MySQLHelper from "../../../HelperClasses/mySQLHelper";
+import decryptVpsPassword from "../../../utils/decryptPassword";
 
 const getMySQLTableList=async({body,set,userId}:Context | any)=>{
     const req=body as {databaseName:string,vpsId:string,vpsIp:string,tableName:string,username:string,password:string};

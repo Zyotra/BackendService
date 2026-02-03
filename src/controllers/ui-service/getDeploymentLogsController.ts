@@ -1,10 +1,10 @@
 import { Context } from "elysia";
-import { db } from "../db/client";
-import { deployments } from "../db/schema";
+import { db } from "../../db/client";
+import { deployments } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
-import { StatusCode } from "../types/types";
-import pool from "../db/pool";
-import SSHClient from "../SSHClient/SSHClient";
+import { StatusCode } from "../../types/types";
+import pool from "../../db/pool";
+import SSHClient from "../../SSHClient/SSHClient";
 
 const getDeploymentLogController = async ({ params, set, userId }: Context | any) => {
     try {

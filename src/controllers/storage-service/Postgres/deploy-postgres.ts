@@ -1,11 +1,11 @@
 import {Context} from "elysia";
-import {StatusCode} from "../types/types";
-import verifyMachine from "../utils/verifyMachine";
-import SSHClient from "../SSHClient/SSHClient";
-import decryptPassword from "../utils/decryptPassword";
-import {PostgresSSHHelper} from "../HelperClasses/PostgresHelper";
-import {db} from "../db/client";
-import {deployed_db} from "../db/schema";
+import {StatusCode} from "../../../types/types";
+import verifyMachine from "../../../utils/verifyMachine";
+import SSHClient from "../../../SSHClient/SSHClient";
+import decryptPassword from "../../../utils/decryptPassword";
+import {PostgresSSHHelper} from "../../../HelperClasses/PostgresHelper";
+import {db} from "../../../db/client";
+import {deployed_db} from "../../../db/schema";
 import { and, eq } from "drizzle-orm";
 
 const deployPostgresController = async ({body,set,userId}:Context | any) => {

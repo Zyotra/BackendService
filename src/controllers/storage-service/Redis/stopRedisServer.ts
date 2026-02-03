@@ -1,11 +1,11 @@
 import { Context } from "elysia";
-import verifyMachine from "../../utils/verifyMachine";
-import { StatusCode } from "../../types/types";
-import SSHClient from "../../SSHClient/SSHClient";
-import decryptVpsPassword from "../../utils/decryptPassword";
-import RedisHelper from "../../HelperClasses/RedisHelper";
-import { caching } from "../../db/schema";
-import { db } from "../../db/client";
+import verifyMachine from "../../../utils/verifyMachine";
+import { StatusCode } from "../../../types/types";
+import SSHClient from "../../../SSHClient/SSHClient";
+import decryptVpsPassword from "../../../utils/decryptPassword";
+import RedisHelper from "../../../HelperClasses/RedisHelper";
+import { caching } from "../../../db/schema";
+import { db } from "../../../db/client";
 import { and, eq } from "drizzle-orm";
 const stopRedisServer = async ({ body, set, userId }: Context | any) => {
   const req = body as {

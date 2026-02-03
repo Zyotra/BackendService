@@ -1,9 +1,9 @@
 import { Context } from "elysia";
-import MySQLHelper from "../../HelperClasses/mySQLHelper";
-import SSHClient from "../../SSHClient/SSHClient";
-import verifyMachine from "../../utils/verifyMachine";
-import decryptVpsPassword from "../../utils/decryptPassword";
-import { StatusCode } from "../../types/types";
+import MySQLHelper from "../../../HelperClasses/mySQLHelper";
+import SSHClient from "../../../SSHClient/SSHClient";
+import verifyMachine from "../../../utils/verifyMachine";
+import decryptVpsPassword from "../../../utils/decryptPassword";
+import { StatusCode } from "../../../types/types";
 
 interface ct extends Context{
     userId:string

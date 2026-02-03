@@ -1,12 +1,12 @@
 import { Context } from "elysia"
-import { StatusCode } from "../../types/types";
-import SSHClient from "../../SSHClient/SSHClient";
-import MySQLHelper from "../../HelperClasses/mySQLHelper";
-import decryptVpsPassword from "../../utils/decryptPassword";
-import { db } from "../../db/client";
-import { deployed_db } from "../../db/schema";
+import { StatusCode } from "../../../types/types";
+import SSHClient from "../../../SSHClient/SSHClient";
+import MySQLHelper from "../../../HelperClasses/mySQLHelper";
+import decryptVpsPassword from "../../../utils/decryptPassword";
+import { db } from "../../../db/client";
+import { deployed_db } from "../../../db/schema";
 import { and, eq } from "drizzle-orm";
-import verifyMachine from "../../utils/verifyMachine";
+import verifyMachine from "../../../utils/verifyMachine";
 const deleteMySQL=async({body,set,userId}:Context | any)=>{
     const req = body as { vpsId: string,vpsIp:string, dbName: string,userName:string, password: string,rootPassword:string };
     const {vpsId,vpsIp,dbName,userName,password,rootPassword} = req;

@@ -1,10 +1,10 @@
 import { Context } from "elysia";
-import { StatusCode } from "../../types/types";
-import SSHClient from "../../SSHClient/SSHClient";
-import { PostgresSSHHelper } from "../../HelperClasses/PostgresHelper";
-import verifyMachine from "../../utils/verifyMachine";
-import decryptVpsPassword from "../../utils/decryptPassword";
-import MySQLHelper from "../../HelperClasses/mySQLHelper";
+import { StatusCode } from "../../../types/types";
+import SSHClient from "../../../SSHClient/SSHClient";
+import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
+import verifyMachine from "../../../utils/verifyMachine";
+import decryptVpsPassword from "../../../utils/decryptPassword";
+import MySQLHelper from "../../../HelperClasses/mySQLHelper";
 import { password } from "bun";
 
 const getMySQLTableData=async({body,set,userId}:Context | any)=>{

@@ -1,8 +1,8 @@
 import { Context } from "elysia";
-import { db } from "../../db/client";
-import { caching } from "../../db/schema";
+import { db } from "../../../db/client";
+import { caching } from "../../../db/schema";
 import { eq } from "drizzle-orm";
-import { StatusCode } from "../../types/types";
+import { StatusCode } from "../../../types/types";
 
 const getRedisServer=async({set,userId}:Context|any)=>{
     try {

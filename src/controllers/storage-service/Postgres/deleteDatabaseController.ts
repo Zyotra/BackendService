@@ -1,11 +1,11 @@
 import {Context} from "elysia";
-import {StatusCode} from "../types/types";
-import verifyMachine from "../utils/verifyMachine";
-import SSHClient from "../SSHClient/SSHClient";
-import decryptPassword from "../utils/decryptPassword";
-import {PostgresSSHHelper} from "../HelperClasses/PostgresHelper";
-import { deployed_db } from "../db/schema";
-import { db } from "../db/client";
+import {StatusCode} from "../../../types/types";
+import verifyMachine from "../../../utils/verifyMachine";
+import SSHClient from "../../../SSHClient/SSHClient";
+import decryptPassword from "../../../utils/decryptPassword";
+import {PostgresSSHHelper} from "../../../HelperClasses/PostgresHelper";
+import { deployed_db } from "../../../db/schema";
+import { db } from "../../../db/client";
 import { eq } from "drizzle-orm";
 
 const deleteDatabaseController=async({body,params,set,userId}:Context | any)=>{
