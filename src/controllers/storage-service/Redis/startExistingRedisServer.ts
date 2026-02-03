@@ -17,14 +17,14 @@ const startExistingRedisServer = async ({ body, set, userId }: Context | any) =>
     port: string;
   };
   const { name, password, vpsId, vpsIp, port } = req;
-  
+
   if (!name || !password || !vpsId || !port || !vpsIp) {
     set.status = StatusCode.BAD_REQUEST;
     return {
       message: "Invalid request body",
     };
   }
-  
+
   const isMachineVerified = await verifyMachine(vpsId, userId, vpsIp);
   if (!isMachineVerified.status) {
     set.status = StatusCode.BAD_REQUEST;
@@ -32,11 +32,16 @@ const startExistingRedisServer = async ({ body, set, userId }: Context | any) =>
       message: "unauthorized machine access",
     };
   }
-  
+
   let ssh: SSHClient | null = null;
   let redis: RedisHelper | null = null;
   const { machine } = isMachineVerified;
-  
+  if (!machine) {
+    set.status = StatusCode.FORBIDDEN
+    return {
+      message: "Machine verification failed"
+    }
+  }
   try {
     const decryptedPassword = await decryptVpsPassword(machine.vps_password);
     ssh = new SSHClient({
@@ -45,15 +50,15 @@ const startExistingRedisServer = async ({ body, set, userId }: Context | any) =>
       username: "root",
     });
     await ssh.connect();
-    
+
     redis = new RedisHelper(ssh);
     await redis.startExistingRedisServer(name, password, port);
-    
+
     await db
       .update(caching)
       .set({ status: "running" })
       .where(and(eq(caching.host, vpsIp), eq(caching.port, parseInt(port))));
-    
+
     set.status = StatusCode.OK;
     return {
       message: "Successfully started redis server",

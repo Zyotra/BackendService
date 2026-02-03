@@ -6,35 +6,41 @@ import decryptVpsPassword from "../../../utils/decryptPassword";
 import { StatusCode } from "../../../types/types";
 
 const backupPostgres = async ({ body, set, userId }: Context | any) => {
-    const req=body as {username:string,password:string,databaseName:string,vpsId:string,vpsIp:string};
-    const {username,password,databaseName,vpsId,vpsIp}=req;
-    var pgHelper:PostgresSSHHelper | null=null;
-    var ssh:SSHClient|null=null
+    const req = body as { username: string, password: string, databaseName: string, vpsId: string, vpsIp: string };
+    const { username, password, databaseName, vpsId, vpsIp } = req;
+    var pgHelper: PostgresSSHHelper | null = null;
+    var ssh: SSHClient | null = null
     try {
-        const isMachineVerified=await verifyMachine(vpsId,userId,vpsIp)
-        const {machine}=isMachineVerified;
-        const hashedPassword=await decryptVpsPassword(machine.vps_password)
-        ssh=new SSHClient({
-            username:"root",
-            host:vpsIp,
-            password:hashedPassword
+        const isMachineVerified = await verifyMachine(vpsId, userId, vpsIp)
+        const { machine } = isMachineVerified;
+        if (!machine) {
+            set.status = StatusCode.FORBIDDEN
+            return {
+                message: "Machine verification failed"
+            }
+        }
+        const hashedPassword = await decryptVpsPassword(machine.vps_password)
+        ssh = new SSHClient({
+            username: "root",
+            host: vpsIp,
+            password: hashedPassword
         })
-        pgHelper=new PostgresSSHHelper(ssh)
+        pgHelper = new PostgresSSHHelper(ssh)
         const backupResult = await pgHelper.backupDatabase(databaseName, username)
-        set.status=StatusCode.OK
-        return{
+        set.status = StatusCode.OK
+        return {
             status: "success",
             message: backupResult.message,
             backupPath: backupResult.backupPath
         }
     } catch (error) {
-        set.status=StatusCode.INTERNAL_SERVER_ERROR
-        return{
+        set.status = StatusCode.INTERNAL_SERVER_ERROR
+        return {
             status: "error",
             message: error instanceof Error ? error.message : String(error)
         }
-    }finally{
-        if(ssh){
+    } finally {
+        if (ssh) {
             await ssh.close()
         }
     }

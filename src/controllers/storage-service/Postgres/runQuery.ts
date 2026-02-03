@@ -4,15 +4,15 @@ import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
 import { verifyMachine } from "../MySQL/deployMySQL";
 import { StatusCode } from "../../../types/types";
 import decryptVpsPassword from "../../../utils/decryptPassword";
-const runQuery = async ({ set, body,userId }: Context|any) => {
+const runQuery = async ({ set, body, userId }: Context | any) => {
   const req = body as {
     databaseName: string;
     vpsId: string;
     vpsIp: string;
     username: string;
-    query:string
+    query: string
   };
-  const { databaseName, vpsId, vpsIp, username,query } = req;
+  const { databaseName, vpsId, vpsIp, username, query } = req;
   var ssh: SSHClient | null = null;
   var pgHelper: PostgresSSHHelper | null = null;
   if (!databaseName || !vpsId || !vpsIp || !username || !query) {
@@ -33,6 +33,12 @@ const runQuery = async ({ set, body,userId }: Context|any) => {
     };
   }
   const { machine } = isMachineVerified;
+  if (!machine) {
+    set.status = StatusCode.FORBIDDEN
+    return {
+      message: "Machine verification failed"
+    }
+  }
   const hashedPassword = await decryptVpsPassword(machine.vps_password);
   console.log("password hashed creating ssh");
   console.log(machine);
@@ -45,21 +51,21 @@ const runQuery = async ({ set, body,userId }: Context|any) => {
     await ssh.connect();
     console.log("connected to ssh");
     pgHelper = new PostgresSSHHelper(ssh);
-    const result=await pgHelper.executeSql(query,username,databaseName)
-    set.status=StatusCode.OK
-    return{
-        message:"success",
-        rows:result
+    const result = await pgHelper.executeSql(query, username, databaseName)
+    set.status = StatusCode.OK
+    return {
+      message: "success",
+      rows: result
     }
   } catch (error) {
     console.log("Error while running query")
-    set.status=StatusCode.INTERNAL_SERVER_ERROR
-    return{
-        message:error
+    set.status = StatusCode.INTERNAL_SERVER_ERROR
+    return {
+      message: error
     }
   } finally {
-    if(ssh){
-        await ssh.close()
+    if (ssh) {
+      await ssh.close()
     }
   }
 };

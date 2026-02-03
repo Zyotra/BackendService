@@ -6,12 +6,12 @@ import SSHClient from "../../SSHClient/SSHClient"
 import buildRepo from "../../repoActions/cloneBuildRepo"
 import getRepoName from "../../repoActions/getRepoName"
 import injectEnv from "../../repoActions/injectEnv"
-import { getServerConfig } from "../../templates/nginxConfig"
+import { getServerConfig, getServerConfigFrontend } from "../../templates/nginxConfig"
 import injectNginxConfig from "../../repoActions/injectNginxConfig"
 import cleanDirectory from "../../repoActions/cleanDirectory"
 import enableSSLDomain from "../../repoActions/enableDomain"
-import saveActivity from "../../db/saveActivity"
-import checkDomainValidity from "../../db/checkDomainValidity"
+import saveActivity from "../../utils/saveActivity"
+import checkDomainValidity from "../../utils/checkDomainValidity"
 import cloneRepo from "../../repoActions/cloneRepo"
 import copyAssets from "../../repoActions/copyAssets"
 import installDependencies from "../../repoActions/installDepedencies"
@@ -69,7 +69,7 @@ const deployUIController = async ({ body, set }: Context) => {
         socketManager.emitLog(deploymentId, `Installing required dependencies...\n`)
         const isDepInstalled = await installDependencies(ssh, framework);
         if (!isDepInstalled) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to install dependencies on the VPS.", framework)
+            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to install dependencies on the VPS.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
             set.status = StatusCode.INTERNAL_SERVER_ERROR
             return {
                 status: "error",
@@ -83,7 +83,7 @@ const deployUIController = async ({ body, set }: Context) => {
         console.log("Starting to clone the repository:", repoUrl + " into " + dirName);
         const isRepoCloned = await cloneRepo(ssh, repoUrl, deploymentId);
         if (!isRepoCloned) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone the repository.", framework)
+            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone the repository.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
             await cleanDirectory(ssh, getRepoName(repoUrl))
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -96,7 +96,7 @@ const deployUIController = async ({ body, set }: Context) => {
             console.log("Injecting environment variables into .env file for directory:", dirName);
             const isEnvInjected = await injectEnv(ssh, env, dirName, deploymentId)
             if (!isEnvInjected) {
-                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject environment variables.", framework)
+                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject environment variables.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
                 await cleanDirectory(ssh, getRepoName(repoUrl))
                 set.status = StatusCode.BAD_REQUEST
                 return {
@@ -110,7 +110,7 @@ const deployUIController = async ({ body, set }: Context) => {
         if (framework.toLowerCase() == "plainhtml" || framework.toLowerCase() == "htmlcssjs" || framework.toLowerCase() == "html") {
             const isRepoCopied = await copyAssets(ssh, dirName, "", deploymentId);
         if (!isRepoCopied) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework)
+            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await cleanDirectory(ssh, `/var/www/${dirName}`)
             set.status = StatusCode.INTERNAL_SERVER_ERROR
@@ -122,7 +122,7 @@ const deployUIController = async ({ body, set }: Context) => {
         } else {
             const isRepoBuilt = await buildRepo(ssh, repoUrl, deploymentId, packageInstallerCommand,dirName, buildCommand);
             if (!isRepoBuilt) {
-                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to build the repository. Check build command and logs.", framework)
+                await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to build the repository. Check build command and logs.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
                 await cleanDirectory(ssh, getRepoName(repoUrl))
                 set.status = StatusCode.BAD_REQUEST
                 return {
@@ -133,7 +133,7 @@ const deployUIController = async ({ body, set }: Context) => {
         
         const isRepoCopied = await copyAssets(ssh, dirName, outDir, deploymentId);
         if (!isRepoCopied) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework)
+            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await cleanDirectory(ssh, `/var/www/${getRepoName(repoUrl)}`)
             set.status = StatusCode.INTERNAL_SERVER_ERROR
@@ -143,10 +143,10 @@ const deployUIController = async ({ body, set }: Context) => {
             }
         }
     }
-        const nginxConfig = getServerConfig(domain, dirName);
+        const nginxConfig = getServerConfigFrontend(domain, dirName);
         const isNginxConfigInjected = await injectNginxConfig(ssh, nginxConfig, domain, deploymentId);
         if (!isNginxConfigInjected) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject Nginx configuration.", framework)
+            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to inject Nginx configuration.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await cleanDirectory(ssh, `/var/www/${getRepoName(repoUrl)}`)
             await cleanDirectory(ssh, `/etc/nginx/sites-available/${domain}`)
@@ -159,7 +159,7 @@ const deployUIController = async ({ body, set }: Context) => {
         }
         const isDomainEnabled = await enableSSLDomain(ssh, domain, deploymentId);
         if (!isDomainEnabled) {
-            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to enable domain in Nginx.", framework)
+            await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to enable domain in Nginx.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
             await cleanDirectory(ssh, getRepoName(repoUrl))
             await cleanDirectory(ssh, `/var/www/${getRepoName(repoUrl)}`)
             await cleanDirectory(ssh, `/etc/nginx/sites-available/${domain}`)
@@ -171,7 +171,7 @@ const deployUIController = async ({ body, set }: Context) => {
                 message: "Failed to enable domain in Nginx."
             }
         }
-        await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "SUCCESS", repoUrl, "UI DEPLOYED SUCCESSFULLY", framework)
+        await saveActivity(parseInt(credentials.ownerId), deploymentId, vpsIp, domain, "SUCCESS", repoUrl, "UI DEPLOYED SUCCESSFULLY", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
         return {
             status: "success",
             message: "Deployment finished",

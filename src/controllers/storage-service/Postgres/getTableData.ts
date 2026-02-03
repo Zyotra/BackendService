@@ -5,27 +5,27 @@ import { StatusCode } from "../../../types/types";
 import { verifyMachine } from "../MySQL/deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 
-const getTableData=async({set,body,userId}:Context | any)=>{
-    const req=body as {databaseName:string,vpsId:string,vpsIp:string,tableName:string,username:string};
-    const {databaseName,vpsId,vpsIp,tableName,username}=req;
-    if(!databaseName || !vpsId || !vpsIp || !tableName || !username){
-        set.status=StatusCode.BAD_REQUEST
-        return{
-            message:"Invalid request body."
+const getTableData = async ({ set, body, userId }: Context | any) => {
+    const req = body as { databaseName: string, vpsId: string, vpsIp: string, tableName: string, username: string };
+    const { databaseName, vpsId, vpsIp, tableName, username } = req;
+    if (!databaseName || !vpsId || !vpsIp || !tableName || !username) {
+        set.status = StatusCode.BAD_REQUEST
+        return {
+            message: "Invalid request body."
         }
     }
-    var ssh:SSHClient | null =null;
-    var pgHelper:PostgresSSHHelper | null =null;
+    var ssh: SSHClient | null = null;
+    var pgHelper: PostgresSSHHelper | null = null;
     try {
-        const isMachineVerified=await verifyMachine(vpsId,userId,vpsIp)
-        if(!isMachineVerified.status){
-            set.status=StatusCode.NOT_FOUND
-            return{
-                message:"Invalid Machine details or you are unauthorized to access this machine"
+        const isMachineVerified = await verifyMachine(vpsId, userId, vpsIp)
+        if (!isMachineVerified.status) {
+            set.status = StatusCode.NOT_FOUND
+            return {
+                message: "Invalid Machine details or you are unauthorized to access this machine"
             }
         }
-        const machine=isMachineVerified.machine as any;
-        const hashedPassword=await decryptVpsPassword(machine.vps_password)
+        const machine = isMachineVerified.machine as any;
+        const hashedPassword = await decryptVpsPassword(machine.vps_password)
         ssh = new SSHClient({
             host: machine.vps_ip,
             username: "root",
@@ -34,19 +34,19 @@ const getTableData=async({set,body,userId}:Context | any)=>{
         await ssh.connect();
         console.log("connected to ssh")
         pgHelper = new PostgresSSHHelper(ssh);
-        const data=await pgHelper.getTableData(databaseName,tableName,username)
-        set.status=StatusCode.OK
-        return{
-            status:"success",
+        const data = await pgHelper.getTableData(databaseName, tableName, username)
+        set.status = StatusCode.OK
+        return {
+            status: "success",
             data
         }
     } catch (error) {
-        set.status=StatusCode.INTERNAL_SERVER_ERROR
-        return{
-            message:error
+        set.status = StatusCode.INTERNAL_SERVER_ERROR
+        return {
+            message: error
         }
-    }finally{
-        if(ssh){
+    } finally {
+        if (ssh) {
             await ssh.close()
         }
     }

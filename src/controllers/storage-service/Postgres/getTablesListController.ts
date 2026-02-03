@@ -5,25 +5,31 @@ import decryptVpsPassword from "../../../utils/decryptPassword";
 import SSHClient from "../../../SSHClient/SSHClient";
 import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
 import parseTableNames from "../../../utils/parseTableNames";
-const getTablesListController=async({body,set,userId}:Context | any)=>{
-    const req=body as {databaseName:string,vpsId:string,vpsIp:string,username:string};
-    const {databaseName,vpsId,vpsIp,username}=req;
-    var ssh:SSHClient | null =null;
-    var pgHelper:PostgresSSHHelper | null =null;
-    if(!databaseName || !vpsId || !vpsIp || !username){
-        set.status=StatusCode.BAD_REQUEST;
+const getTablesListController = async ({ body, set, userId }: Context | any) => {
+    const req = body as { databaseName: string, vpsId: string, vpsIp: string, username: string };
+    const { databaseName, vpsId, vpsIp, username } = req;
+    var ssh: SSHClient | null = null;
+    var pgHelper: PostgresSSHHelper | null = null;
+    if (!databaseName || !vpsId || !vpsIp || !username) {
+        set.status = StatusCode.BAD_REQUEST;
         return {
-            message:"Invalid request body"
+            message: "Invalid request body"
         }
     }
-    const isMachineVerified=await verifyMachine(vpsId.toString(),userId,vpsIp);
-    if(!isMachineVerified.status){
-        set.status=StatusCode.FORBIDDEN;
+    const isMachineVerified = await verifyMachine(vpsId.toString(), userId, vpsIp);
+    if (!isMachineVerified.status) {
+        set.status = StatusCode.FORBIDDEN;
         return {
-            message:"Unauthorized access for the machine"
+            message: "Unauthorized access for the machine"
         }
     }
-    const {machine}=isMachineVerified;
+    const { machine } = isMachineVerified;
+    if (!machine) {
+        set.status = StatusCode.FORBIDDEN
+        return {
+            message: "Machine verification failed"
+        }
+    }
     const hashedPassword = await decryptVpsPassword(machine.vps_password);
     console.log("password hashed creating ssh")
     console.log(machine)
@@ -36,24 +42,24 @@ const getTablesListController=async({body,set,userId}:Context | any)=>{
         await ssh.connect();
         console.log("connected to ssh")
         pgHelper = new PostgresSSHHelper(ssh);
-        const tables=await pgHelper.getTablesList(databaseName);
-        const tableNames=parseTableNames(tables);
+        const tables = await pgHelper.getTablesList(databaseName);
+        const tableNames = parseTableNames(tables);
         console.log(tableNames)
         await ssh.close();
-        set.status=StatusCode.OK
+        set.status = StatusCode.OK
         return {
-            status:StatusCode.OK,
-            data:tableNames,
-            message:"Tables list fetched successfully"
+            status: StatusCode.OK,
+            data: tableNames,
+            message: "Tables list fetched successfully"
         }
-    }catch (error) {
-        set.status=StatusCode.INTERNAL_SERVER_ERROR;
+    } catch (error) {
+        set.status = StatusCode.INTERNAL_SERVER_ERROR;
         return {
-            status:"invalid request",
+            status: "invalid request",
             message: error
         }
-    }finally{
-        if(ssh){
+    } finally {
+        if (ssh) {
             ssh.close();
         }
     }
