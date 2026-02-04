@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  backend:
+    image: oven/bun:1
+    container_name: backend-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5050:5050"
+    environment:
+      - NODE_ENV=development
+      - PORT=5050
+    env_file:
+      - .env
+    command: bun run dev
+    restart: unless-stopped
