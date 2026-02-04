@@ -4,6 +4,10 @@ import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
 import { verifyMachine } from "../MySQL/deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
 import { StatusCode } from "../../../types/types";
+import { file } from "bun";
+import { backups, deployed_db } from "@/db/schema";
+import { db } from "@/db/client";
+import { and, eq } from "drizzle-orm";
 
 const backupPostgres = async ({ body, set, userId }: Context | any) => {
     const req = body as { userName: string, password: string, dbName: string, vpsId: string, vpsIp: string };
@@ -37,12 +41,29 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
         })
         await ssh.connect()
         pgHelper = new PostgresSSHHelper(ssh)
-        const backupResult = await pgHelper.backupDatabase(dbName, userName)
+        //check if database exists
+        const dbExists=await db.select().from(deployed_db).where(and(eq(deployed_db.dbName, dbName),eq(deployed_db.vpsId,parseInt(vpsId))));
+        if (!dbExists || dbExists.length===0) {
+            set.status = StatusCode.NOT_FOUND
+            return {
+                status: "error",
+                message: `Database '${dbName}' does not exist on the VPS`
+            }
+        }
+        const backupResult = await pgHelper.backupDatabase(dbName, userName);
         set.status = StatusCode.OK
+        await db.insert(backups).values({
+            dbId: dbExists[0].id.toString(),
+            fileName: backupResult.backupFileName,
+            vpsId: parseInt(vpsId),
+            userId: userId,
+            dbType: "postgres"
+        });
         return {
             status: "success",
             message: backupResult.message,
-            backupPath: backupResult.backupPath
+            backupPath: backupResult.backupPath,
+            fileName: backupResult.backupFileName
         }
     } catch (error) {
         set.status = StatusCode.INTERNAL_SERVER_ERROR

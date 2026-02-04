@@ -67,18 +67,26 @@ class MySQLHelper {
     existingInstallation: boolean;
     message: string;
   }> {
-    // 1. Check if MySQL is already installed and configured
+    // 1. Check if MySQL is already installed (check binary existence as primary source of truth)
+    const whichMysql = await this.ssh.exec("which mysql || which mariadb || echo 'not_found'", onLog);
+    const hasBinary = whichMysql.output.trim() !== "not_found";
+
     const statusCheck = await this.ssh.exec(
-      `sudo systemctl is-active mysql 2>/dev/null`,
+      `sudo systemctl is-active mysql 2>/dev/null || sudo systemctl is-active mysqld 2>/dev/null || sudo systemctl is-active mariadb 2>/dev/null`,
       onLog
     );
-    const existingInstallation =
-      statusCheck.exitCode === 0 && statusCheck.output.trim() === "active";
+    const isRunning = statusCheck.exitCode === 0 && statusCheck.output.trim() === "active";
 
-    if (existingInstallation) {
-      console.log("MySQL is already running. Checking configuration...");
+    if (hasBinary || isRunning) {
+      if (onLog) onLog(`MySQL/MariaDB binary found or service running (Running: ${isRunning}). Skipping installation.\n`);
+      
+      // Make sure MySQL is running
+      if (!isRunning) {
+        await this.ssh.exec("sudo systemctl start mysql || sudo systemctl start mysqld", onLog);
+      }
 
       // Try to connect with provided root password
+      // Try multiple service names
       const authCheck = await this.ssh.exec(
         `mysql -u root -p'${rootPassword}' -e "SELECT 1;" 2>&1`,
         onLog
@@ -87,7 +95,7 @@ class MySQLHelper {
       if (authCheck.exitCode !== 0) {
         // Root password doesn't match - ask user what to do
         throw new Error(
-          "'MySQL is already installed with a different root password. Please provide the correct password or reset it manually."
+          "MySQL is already installed with a different root password. Please provide the correct password or reset it manually."
         );
       }
 
@@ -119,17 +127,44 @@ class MySQLHelper {
     // 2. Fresh installation
     await this.ssh.runSequential(
       [
-        // Update system
-        `sudo apt update`,
+        // Clean up any stale locks
+        `sudo rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* 2>/dev/null || true`,
+        `sudo dpkg --configure -a 2>/dev/null || true`,
+        
+        // Kill any running apt processes
+        `sudo killall apt apt-get 2>/dev/null || true`,
+        
+        // Wait for locks to be released
+        `sleep 2`,
+        
+        // Clean apt cache
+        `sudo apt clean || true`,
+        `sudo apt autoclean || true`,
+        
+        // Update package lists
+        `sudo apt update -y || true`,
+        
+        // Try to fix broken dependencies (non-fatal)
+        `sudo apt --fix-broken install -y || true`,
+        
+        // Install missing Python dependencies that may be causing issues
+        `sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-minimal || true`,
+        
+        // Try fix again after installing python3
+        `sudo dpkg --configure -a || true`,
+        `sudo apt --fix-broken install -y || true`,
 
-        // Install MySQL Server
-        `sudo DEBIAN_FRONTEND=noninteractive apt install -y mysql-server`,
+        // Install MySQL/MariaDB with fallback
+        `(sudo DEBIAN_FRONTEND=noninteractive apt install -y mysql-server --fix-missing) || (sudo DEBIAN_FRONTEND=noninteractive apt install -y mariadb-server) || echo "Installation failed"`,
+
+        // Verify installation success before proceeding
+        `which mysql || (echo "MySQL installation returned success but binary not found. Your VPS package manager appears corrupted (missing python3 dependencies)." && exit 1)`,
 
         // Start MySQL
-        `sudo systemctl start mysql`,
+        `sudo systemctl start mysql || sudo systemctl start mariadb || sudo systemctl start mysqld`,
 
         // Enable on boot
-        `sudo systemctl enable mysql`,
+        `sudo systemctl enable mysql || sudo systemctl enable mariadb || sudo systemctl enable mysqld`,
 
         // Wait for MySQL to be ready
         `sudo mysqladmin ping -h localhost --wait=30 || echo "Waiting for MySQL..."`,
@@ -551,7 +586,7 @@ EOF`,
     password: string,
     backupDir: string = "/var/backups/mysql",
     onLog?: (chunk: string) => void
-  ): Promise<{ success: boolean; backupPath: string; message: string }> {
+  ): Promise<{ success: boolean; backupPath: string; backupFileName: string; message: string }> {
     this.validateIdentifier(database, "database");
     this.validateIdentifier(username, "username");
 
@@ -583,6 +618,7 @@ EOF`,
     return {
       success: true,
       backupPath,
+      backupFileName,
       message: `Database '${database}' backed up successfully to ${backupPath}`
     };
   }

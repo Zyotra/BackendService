@@ -1,3 +1,4 @@
+import { db } from "@/db/client";
 import SSHClient from "../SSHClient/SSHClient";
 import Papa from "papaparse";
 interface PostgresConfig {
@@ -295,7 +296,7 @@ EOSQL`);
     username: string,
     backupDir: string = "/var/backups/postgres",
     onLog?: (chunk: string) => void
-  ): Promise<{ success: boolean; backupPath: string; message: string }> {
+  ): Promise<{ success: boolean; backupPath: string; message: string;backupFileName: string }> {
     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(database)) {
       throw new Error("Invalid database name");
     }
@@ -312,7 +313,6 @@ EOSQL`);
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const backupFileName = `${database}_${timestamp}.sql`;
     const backupPath = `${backupDir}/${backupFileName}`;
-
     // Perform the backup using postgres superuser (peer auth works when OS user matches PG user)
     // We use postgres user since it has access to all databases and peer auth will work
     const result = await this.ssh.exec(
@@ -333,6 +333,7 @@ EOSQL`);
     return {
       success: true,
       backupPath,
+      backupFileName,
       message: `Database '${database}' backed up successfully to ${backupPath}`
     };
   }

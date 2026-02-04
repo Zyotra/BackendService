@@ -115,3 +115,22 @@ export const githubAuths = pgTable("github_auths", {
     github_username: varchar("github_username", { length: 100 }).notNull(),
     added_at: timestamp("added_at").defaultNow().notNull()
 });
+
+export const databaseBackups = pgTable("database_backups", {
+    id: serial("id").primaryKey(),
+    dbName: varchar("db_name").notNull(),
+    fileName: varchar("file_name").notNull(),
+    vpsId: integer("vps_id").notNull(),
+    userId: integer("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const backups = pgTable("backups", {
+    id: serial("id").primaryKey(),
+    dbId: varchar("db_id").notNull(),
+    dbType: varchar("db_type").notNull(),
+    fileName: varchar("file_name").notNull(),
+    vpsId: integer("vps_id").notNull(),
+    userId: integer("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull()
+});
