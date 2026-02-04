@@ -6,8 +6,18 @@ import decryptVpsPassword from "../../../utils/decryptPassword";
 import { StatusCode } from "../../../types/types";
 
 const backupPostgres = async ({ body, set, userId }: Context | any) => {
-    const req = body as { username: string, password: string, databaseName: string, vpsId: string, vpsIp: string };
-    const { username, password, databaseName, vpsId, vpsIp } = req;
+    const req = body as { userName: string, password: string, dbName: string, vpsId: string, vpsIp: string };
+    const { userName, dbName, vpsId, vpsIp } = req;
+    
+    // Validate required fields
+    if (!userName || !dbName || !vpsId || !vpsIp) {
+        set.status = StatusCode.BAD_REQUEST
+        return {
+            status: "error",
+            message: "Missing required fields: userName, dbName, vpsId, and vpsIp are required"
+        }
+    }
+    
     var pgHelper: PostgresSSHHelper | null = null;
     var ssh: SSHClient | null = null
     try {
@@ -25,8 +35,9 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
             host: vpsIp,
             password: hashedPassword
         })
+        await ssh.connect()
         pgHelper = new PostgresSSHHelper(ssh)
-        const backupResult = await pgHelper.backupDatabase(databaseName, username)
+        const backupResult = await pgHelper.backupDatabase(dbName, userName)
         set.status = StatusCode.OK
         return {
             status: "success",

@@ -313,9 +313,10 @@ EOSQL`);
     const backupFileName = `${database}_${timestamp}.sql`;
     const backupPath = `${backupDir}/${backupFileName}`;
 
-    // Perform the backup
+    // Perform the backup using postgres superuser (peer auth works when OS user matches PG user)
+    // We use postgres user since it has access to all databases and peer auth will work
     const result = await this.ssh.exec(
-      `sudo -u postgres pg_dump -U ${username} ${database} > ${backupPath}`,
+      `sudo -u postgres pg_dump ${database} > ${backupPath}`,
       onLog
     );
 
