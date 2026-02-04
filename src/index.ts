@@ -58,6 +58,7 @@ import registerController from "./controllers/auth-service/registerController";
 import sendOtpController from "./controllers/auth-service/sendOtpController";
 import getAccessTokenController from "./controllers/auth-service/getAccessTokenController";
 import dashboardController from "./controllers/auth-service/dashboardController";
+import getUsedPorts from "./controllers/deployment-manager/portController";
 config();
 const app = new Elysia()
 app.use(cors({
@@ -189,7 +190,8 @@ app
   .get("/stop-postgres/:id", stopPostgresController)
   .get("/start-postgres/:id", startPostgresController)
   .get("/stop-mysql/:id", stopMySQLController)
-  .get("/start-mysql/:id", startMySQLController);
+  .get("/start-mysql/:id", startMySQLController)
+  .get("/get-port/:id",getUsedPorts);
 app.listen(Number(process.env.PORT));
 serverStore.server = app.server;
 console.log(

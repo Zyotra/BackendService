@@ -46,7 +46,7 @@ const getUsedPorts = async ({ params, set, userId }: Context | any) => {
             username: "root",
             password: decryptedPassword
         });
-
+        await ssh.connect();
         // Get all listening ports using ss (socket statistics)
         // -t: TCP, -u: UDP, -l: listening, -n: numeric ports
         const result = await ssh.exec(
