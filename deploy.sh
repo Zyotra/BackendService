@@ -13,10 +13,12 @@ docker rm zyotrabackend 2>/dev/null || true
 echo "Starting new container..."
 docker run -d \
   --name zyotrabackend \
-  -p 5050:5050 \
+  --network host \
   --env-file .env \
   --restart unless-stopped \
   zyotrabackend
 
 echo "Deployment complete!"
+echo "Waiting for container to start..."
+sleep 3
 docker logs --tail 50 zyotrabackend
