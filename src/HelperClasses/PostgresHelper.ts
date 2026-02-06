@@ -330,6 +330,9 @@ EOSQL`);
       throw new Error("Backup file is empty or was not created");
     }
 
+    // Make backup file readable by root user for upload
+    await this.ssh.exec(`sudo chmod 644 ${backupPath}`, onLog);
+
     return {
       success: true,
       backupPath,

@@ -8,6 +8,7 @@ import { file } from "bun";
 import { backups, deployed_db } from "@/db/schema";
 import { db } from "@/db/client";
 import { and, eq } from "drizzle-orm";
+import { uploadFile } from "@/bucket/upload";
 
 const backupPostgres = async ({ body, set, userId }: Context | any) => {
     const req = body as { userName: string, password: string, dbName: string, vpsId: string, vpsIp: string };
@@ -52,6 +53,7 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
         }
         const backupResult = await pgHelper.backupDatabase(dbName, userName);
         set.status = StatusCode.OK
+        await uploadFile(backupResult.backupPath, `${backupResult.backupFileName}`);
         await db.insert(backups).values({
             dbId: dbExists[0].id.toString(),
             fileName: backupResult.backupFileName,

@@ -18,21 +18,21 @@ const getAccessTokenController = async ({ set, cookie }: Context) => {
         }
     }
     const userId = isValid.userId;
-    const isProd = false;
+    const isProd = true;
     const accessToken = await generateAccessToken(userId);
-        cookie.accessToken.set({
-            value: accessToken,
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? 'none' : 'lax',
-            domain: isProd ? "ramkrishna.cloud" : undefined,
-            path: '/',
-            maxAge: 15 * 60,
-        });
+    cookie.accessToken.set({
+        value: accessToken,
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+        domain: isProd ? "zyotra.com" : undefined,
+        path: '/',
+        maxAge: 15 * 60,
+    });
     set.status = StatusCode.OK;
     return {
         message: "New access token generated",
         accessToken
-    }    
+    }
 }
 export default getAccessTokenController

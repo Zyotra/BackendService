@@ -20,14 +20,14 @@ const loginController = async ({ body, set, cookie }: Context) => {
         }
         const accessToken = await generateAccessToken(user[0].id.toString());
         const refreshToken = await generateRefreshToken(user[0].id.toString());
-        const isProd = false;
+        const isProd = true;
         console.log("Is Production Environment:", isProd);
         cookie.refreshToken.set({
             value: refreshToken,
             httpOnly: true,
             secure: isProd,            // must be true on production
             sameSite: isProd ? 'none' : 'lax',
-            domain: isProd ? "ramkrishna.cloud" : undefined,
+            domain: isProd ? "zyotra.com" : undefined,
             path: '/',
             maxAge: 15 * 24 * 60 * 60,
         });
