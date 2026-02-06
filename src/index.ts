@@ -1,5 +1,7 @@
-import { Elysia } from "elysia";
 import { config } from "dotenv";
+config(); // Load .env BEFORE any imports that use process.env
+
+import { Elysia } from "elysia";
 import { StatusCode } from "./types/types";
 import checkAuthPlugin from "./middlewares/checkAuth";
 import serverStore from "./ws/store";
@@ -59,7 +61,7 @@ import sendOtpController from "./controllers/auth-service/sendOtpController";
 import getAccessTokenController from "./controllers/auth-service/getAccessTokenController";
 import dashboardController from "./controllers/auth-service/dashboardController";
 import getUsedPorts from "./controllers/deployment-manager/portController";
-config();
+
 const app = new Elysia()
 app.use(cors({
   origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud", "https://portal.zyotra.com"],
@@ -75,10 +77,10 @@ app
       Time: new Date().toISOString()
     }
   })
-  .post("/login",loginController)
-  .post("/register",registerController)
+  .post("/login", loginController)
+  .post("/register", registerController)
   .post("/send-otp", sendOtpController)
-  .get("/get-access-token",getAccessTokenController);
+  .get("/get-access-token", getAccessTokenController);
 app
   .ws("/deploy-logs", {
     async open(ws) {
@@ -145,7 +147,7 @@ app
   })
 app
   .use(checkAuthPlugin)
-  .get("/dashboard",dashboardController)
+  .get("/dashboard", dashboardController)
   .post("/deploy-webservice", deployWebServiceController)
   .get("/get-projects", getProjectsController)
   .delete("/delete-project/:id", deleteProjectsController)
@@ -191,7 +193,7 @@ app
   .get("/start-postgres/:id", startPostgresController)
   .get("/stop-mysql/:id", stopMySQLController)
   .get("/start-mysql/:id", startMySQLController)
-  .get("/get-port/:id",getUsedPorts);
+  .get("/get-port/:id", getUsedPorts);
 app.listen(Number(process.env.PORT));
 serverStore.server = app.server;
 console.log(

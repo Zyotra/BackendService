@@ -1,5 +1,7 @@
 import { Context } from "elysia";
+
 import SSHClient from "../../../SSHClient/SSHClient";
+import { getS3Client } from "../../../bucket/s3";
 import { PostgresSSHHelper } from "../../../HelperClasses/PostgresHelper";
 import { verifyMachine } from "../MySQL/deployMySQL";
 import decryptVpsPassword from "../../../utils/decryptPassword";
@@ -11,7 +13,7 @@ import { and, eq } from "drizzle-orm";
 const backupPostgres = async ({ body, set, userId }: Context | any) => {
     const req = body as { userName: string, password: string, dbName: string, vpsId: string, vpsIp: string };
     const { userName, dbName, vpsId, vpsIp } = req;
-    
+
     // Validate required fields
     if (!userName || !dbName || !vpsId || !vpsIp) {
         set.status = StatusCode.BAD_REQUEST
@@ -20,7 +22,7 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
             message: "Missing required fields: userName, dbName, vpsId, and vpsIp are required"
         }
     }
-    
+
     var pgHelper: PostgresSSHHelper | null = null;
     var ssh: SSHClient | null = null
     try {
@@ -41,8 +43,8 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
         await ssh.connect()
         pgHelper = new PostgresSSHHelper(ssh)
         //check if database exists
-        const dbExists=await db.select().from(deployed_db).where(and(eq(deployed_db.dbName, dbName),eq(deployed_db.vpsId,parseInt(vpsId))));
-        if (!dbExists || dbExists.length===0) {
+        const dbExists = await db.select().from(deployed_db).where(and(eq(deployed_db.dbName, dbName), eq(deployed_db.vpsId, parseInt(vpsId))));
+        if (!dbExists || dbExists.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {
                 status: "error",
@@ -50,23 +52,32 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
             }
         }
         const backupResult = await pgHelper.backupDatabase(dbName, userName);
-        
-        // Read backup file from remote VPS via SSH
-        const readResult = await ssh.exec(`cat ${backupResult.backupPath}`);
-        if (readResult.exitCode !== 0) {
-            throw new Error(`Failed to read backup file: ${readResult.output}`);
-        }
-        
-        // Upload to S3
-        const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
-        const s3Client = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
-        await s3Client.send(new PutObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME!,
-            Key: backupResult.backupFileName,
-            Body: readResult.output,
-            ContentType: "application/octet-stream"
-        }));
-        
+
+
+
+        // Create a stream from the remote file
+        const stream = await ssh.createExecStream(`cat ${backupResult.backupPath}`);
+
+        // Upload to S3 using streaming (prevents memory issues)
+        const { Upload } = await import("@aws-sdk/lib-storage");
+
+        const upload = new Upload({
+            client: getS3Client(),
+            params: {
+                Bucket: process.env.S3_BUCKET_NAME!,
+                Key: backupResult.backupFileName,
+                Body: stream,
+                ContentType: "application/octet-stream"
+            },
+        });
+
+        await upload.done();
+
+        // Clean up the remote backup file after successful upload
+        await ssh.exec(`rm ${backupResult.backupPath}`).catch(err => {
+            console.error("Failed to delete remote backup file:", err);
+        });
+
         set.status = StatusCode.OK
         await db.insert(backups).values({
             dbId: dbExists[0].id.toString(),

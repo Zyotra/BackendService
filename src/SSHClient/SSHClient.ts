@@ -27,37 +27,37 @@ class SSHClient {
     private config: ConnectConfig;
     private isConnected: boolean = false;
     private onError?: (error: Error) => void;
-    
+
     constructor(config: ConnectConfig) {
         this.conn = new Client();
         this.config = config;
-        
+
         // Prevent unhandled error crashes
         this.conn.on('error', (err) => {
             console.error('[SSHClient] Connection error:', err.message);
             this.isConnected = false;
             if (this.onError) this.onError(err);
         });
-        
+
         this.conn.on('close', () => {
             console.log('[SSHClient] Connection closed');
             this.isConnected = false;
         });
-        
+
         this.conn.on('end', () => {
             console.log('[SSHClient] Connection ended');
             this.isConnected = false;
         });
     }
-    
+
     setErrorHandler(handler: (error: Error) => void): void {
         this.onError = handler;
     }
-    
+
     isAlive(): boolean {
         return this.isConnected;
     }
-    
+
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.conn.once('ready', () => {
@@ -74,7 +74,7 @@ class SSHClient {
             if (!this.isConnected) {
                 return reject(new Error('SSH connection is not active'));
             }
-            
+
             this.conn.exec(command, (err, stream) => {
                 if (err) return reject(err);
 
@@ -115,6 +115,24 @@ class SSHClient {
             });
         });
     }
+
+    /**
+     * Executes a command and returns the raw stdout stream.
+     * This is useful for binary data transfer where encoding should not be messed with.
+     */
+    createExecStream(command: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            if (!this.isConnected) {
+                return reject(new Error('SSH connection is not active'));
+            }
+
+            this.conn.exec(command, (err, stream) => {
+                if (err) return reject(err);
+                resolve(stream);
+            });
+        });
+    }
+
     // New method for streaming execution
     async execStream(
         command: string,
@@ -129,7 +147,7 @@ class SSHClient {
                 callbacks.onClose?.();
                 return reject(new Error('SSH connection is not active'));
             }
-            
+
             this.conn.exec(command, (err: any, stream: any) => {
                 if (err) {
                     callbacks.onClose?.();
