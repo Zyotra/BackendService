@@ -61,6 +61,7 @@ import sendOtpController from "./controllers/auth-service/sendOtpController";
 import getAccessTokenController from "./controllers/auth-service/getAccessTokenController";
 import dashboardController from "./controllers/auth-service/dashboardController";
 import getUsedPorts from "./controllers/deployment-manager/portController";
+import { publicRateLimitPlugin, authRateLimitPlugin } from "./middlewares/rateLimit";
 
 const app = new Elysia()
 app.use(cors({
@@ -77,6 +78,8 @@ app
       Time: new Date().toISOString()
     }
   })
+  // Rate limiting for public endpoints (IP-based)
+  .use(publicRateLimitPlugin)
   .post("/login", loginController)
   .post("/register", registerController)
   .post("/send-otp", sendOtpController)
@@ -147,6 +150,8 @@ app
   })
 app
   .use(checkAuthPlugin)
+  // Rate limiting for protected endpoints (userId-based)
+  .use(authRateLimitPlugin)
   .get("/dashboard", dashboardController)
   .post("/deploy-webservice", deployWebServiceController)
   .get("/get-projects", getProjectsController)
