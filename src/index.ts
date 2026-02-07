@@ -59,13 +59,14 @@ import loginController from "./controllers/auth-service/loginController";
 import registerController from "./controllers/auth-service/registerController";
 import sendOtpController from "./controllers/auth-service/sendOtpController";
 import getAccessTokenController from "./controllers/auth-service/getAccessTokenController";
+import contactFormController from "./controllers/auth-service/contactFormController";
 import dashboardController from "./controllers/auth-service/dashboardController";
 import getUsedPorts from "./controllers/deployment-manager/portController";
 import { publicRateLimitPlugin, authRateLimitPlugin } from "./middlewares/rateLimit";
 
 const app = new Elysia()
 app.use(cors({
-  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud", "https://portal.zyotra.com"],
+  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud", "https://portal.zyotra.com", "https://zyotra.com"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
@@ -83,6 +84,7 @@ app
   .post("/login", loginController)
   .post("/register", registerController)
   .post("/send-otp", sendOtpController)
+  .post("/contact-form", contactFormController)
   .get("/get-access-token", getAccessTokenController);
 app
   .ws("/deploy-logs", {
