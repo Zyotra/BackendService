@@ -37,7 +37,7 @@ const loginController = async ({ body, set, cookie }: Context) => {
             httpOnly: true,
             secure: isProd,
             sameSite: isProd ? 'none' : 'lax',
-            domain: isProd ? "ramkrishna.cloud" : undefined,
+            domain: isProd ? "zyotra.com" : undefined,
             path: '/',
             maxAge: 15 * 60,
         });
