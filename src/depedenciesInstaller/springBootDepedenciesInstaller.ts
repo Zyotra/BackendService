@@ -3,61 +3,38 @@ import SSHClient from "../SSHClient/SSHClient";
 async function installSpringBootDependencies(ssh: SSHClient): Promise<boolean> {
     try {
         const springBootInstallCommands: string[] = [
-            // Update system
-            "sudo apt update && sudo apt upgrade -y",
+            // 1. System update and install all Java/build tools in one batch
+            "sudo apt update && sudo apt install -y build-essential curl wget git openjdk-21-jdk openjdk-21-jre maven gradle nginx --no-install-recommends",
 
-            // Install prerequisites
-            "sudo apt install -y curl wget git build-essential",
+            // 2. Create Java symlinks
+            `JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java) 2>/dev/null) 2>/dev/null) 2>/dev/null) && \
+[ -n \"\\$JAVA_HOME\" ] && (
+  [ -x \\$JAVA_HOME/bin/java ] && sudo ln -sf \\$JAVA_HOME/bin/java /usr/local/bin/java || true
+  [ -x \\$JAVA_HOME/bin/javac ] && sudo ln -sf \\$JAVA_HOME/bin/javac /usr/local/bin/javac || true
+) || true && \
+[ -x /usr/bin/mvn ] && sudo ln -sf /usr/bin/mvn /usr/local/bin/mvn || true && \
+[ -x /usr/bin/gradle ] && sudo ln -sf /usr/bin/gradle /usr/local/bin/gradle || true`,
 
-            // Install Git
-            "sudo apt install git -y",
+            // 3. Install Node.js and PM2 if not present
+            `command -v pm2 >/dev/null 2>&1 || (
+  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && \
+  sudo apt install -y nodejs --no-install-recommends && \
+  sudo npm install -g pm2 && \
+  pm2 startup systemd -u root --hp /root 2>/dev/null || true
+)`,
 
-            // Install Java (OpenJDK 21 LTS - latest stable)
-            "sudo apt install -y openjdk-21-jdk openjdk-21-jre",
+            // 4. Start Nginx and enable services
+            "sudo systemctl start nginx && sudo systemctl enable nginx",
 
-            // Verify Java installation
-            "java -version",
-            "javac -version",
-
-            // Install Maven
-            "sudo apt install -y maven",
-
-            // Verify Maven
-            "mvn -version",
-
-            // Install Gradle
-            "sudo apt install -y gradle",
-
-            // Verify Gradle
-            "gradle -version",
-
-            // Install Nginx (for reverse proxy)
-            "sudo apt install nginx -y",
-            "sudo systemctl start nginx",
-            "sudo systemctl enable nginx",
-
-            // Install Node.js and PM2 for process management
-            "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs",
-            "sudo npm install -g pm2",
-            "pm2 startup systemd -u root --hp /root || true",
-
-            // Create symlinks for Java tools (detect architecture dynamically)
-            "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) && sudo ln -sf $JAVA_HOME/bin/java /usr/local/bin/java || true",
-            "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) && sudo ln -sf $JAVA_HOME/bin/javac /usr/local/bin/javac || true",
-            "sudo ln -sf /usr/bin/mvn /usr/local/bin/mvn || true",
-            "sudo ln -sf /usr/bin/gradle /usr/local/bin/gradle || true",
-
-            // Verify installations
-            'echo "================================"',
-            'echo "Spring Boot Dependencies Install Complete!"',
-            'echo "================================"',
-            'java -version',
-            'javac -version',
-            'mvn -version',
-            'gradle -version',
-            'nginx -v',
-            'git --version',
-            'echo "================================"',
+            // 5. Final verification (all at once)
+            `echo "=== Spring Boot Dependencies Install Complete ===" && \
+java -version 2>&1 && \
+javac -version 2>&1 && \
+mvn -version && \
+gradle -version && \
+nginx -v 2>&1 && \
+git --version && \
+echo "=== Ready to deploy Spring Boot applications ==="`,
         ];
 
         await ssh.runSequential(springBootInstallCommands, (logChunk) => {
