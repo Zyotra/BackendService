@@ -10,16 +10,13 @@ const checkAuth = new Elysia().derive(async ({ headers, set,cookie }: Context) =
         message: "Access Token Missing"
     }
    }
-    console.log("Verifying token:", token);
     const isValid = await verifyAccessToken(token)
-    console.log("Token verification result:", isValid);
     if (!isValid) {
         set.status = StatusCode.EXPIRED_TOKEN
         return {
             message: "Invalid Access Token"
         }
     }
-    console.log("Authenticated user:", isValid);
     return {
         userId: isValid.userId
     }
