@@ -3,9 +3,22 @@ import { db } from "../../db/client"
 import { deployments } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { StatusCode } from "../../types/types";
-const getProjectsController = async({set,userId}: Context | any)=>{
+const getProjectsController = async ({ set, userId }: Context | any) => {
     try {
-        const projects=await db.select().from(deployments).where(eq(deployments.ownerId, userId));
+        const projects = await db
+            .select({
+                id: deployments.id,
+                vpsIp:deployments.vpsIp,
+                ownerId:deployments.ownerId,
+                repoUrl:deployments.repoUrl,
+                domain:deployments.domain,
+                projectType:deployments.projectType,
+                logs:deployments.logs,
+                framework:deployments.framework,
+                status: deployments.status,
+                createdAt: deployments.createdAt
+            })
+            .from(deployments).where(eq(deployments.ownerId, userId));
         set.status = StatusCode.OK
         return {
             status: "success",
