@@ -20,7 +20,17 @@ const deployLatestCommitController = async ({ set, params, userId }: Context | a
             }
         }
         console.log("Deploying latest commit for deployment ID:", deploymentId, "by user ID:", userId);
-        const delploymentRecord = await db.select().from(deployments).where(and(eq(deployments.deploymentId, deploymentId), eq(deployments.ownerId, userId))).limit(1);
+        const delploymentRecord = await db.select({
+            vpsIp:deployments.vpsIp,
+            repoUrl:deployments.repoUrl,
+            domain:deployments.domain,
+            subFolder:deployments.subFolder,
+            framework:deployments.framework,
+            projectType:deployments.projectType,
+            deploymentId:deployments.deploymentId,
+            packageInstallerCommand:deployments.packageInstallerCommand,
+            buildCommand:deployments.buildCommand
+        }).from(deployments).where(and(eq(deployments.deploymentId, deploymentId), eq(deployments.ownerId, userId))).limit(1);
         if (delploymentRecord.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {

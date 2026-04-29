@@ -14,7 +14,7 @@ const deleteMachine = async ({ set, params, userId }: Context | any) => {
         }
     }
     try {
-        const machineExists = await db.select().from(vpsMachines).where(eq(vpsMachines.id, parseInt(vps_Id)));
+        const machineExists = await db.select({ownerId:vpsMachines.ownerId}).from(vpsMachines).where(eq(vpsMachines.id, parseInt(vps_Id)));
         if (machineExists.length === 0) {
             set.status = StatusCode.NOT_FOUND;
             return {

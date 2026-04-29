@@ -34,7 +34,7 @@ const deployPostgresController = async ({ body, set, userId }: Context | any) =>
             }
         }
         const vpsIp = machine.vps_ip as string;
-        const existingDatabase = await db.select().from(deployed_db).where(and(eq(deployed_db.host, vpsIp), eq(deployed_db.dbName, dbName)));
+        const existingDatabase = await db.select({id:deployed_db.id}).from(deployed_db).where(and(eq(deployed_db.host, vpsIp), eq(deployed_db.dbName, dbName)));
         if (existingDatabase.length) {
             set.status = StatusCode.BAD_REQUEST;
             return {

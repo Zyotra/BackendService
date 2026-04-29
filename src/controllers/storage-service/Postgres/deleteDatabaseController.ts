@@ -18,7 +18,11 @@ const deleteDatabaseController = async ({ body, params, set, userId }: Context |
             message: "Database ID is required"
         }
     }
-    const database = await db.select().from(deployed_db).where(eq(deployed_db.id, databaseId));
+    const database = await db.select({
+        vpsId:deployed_db.vpsId,
+        host:deployed_db.host,
+        dbName:deployed_db.dbName
+    }).from(deployed_db).where(eq(deployed_db.id, databaseId));
     if (!database) {
         set.status = StatusCode.NOT_FOUND;
         return {

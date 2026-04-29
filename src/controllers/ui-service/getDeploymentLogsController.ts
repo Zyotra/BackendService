@@ -8,14 +8,17 @@ import SSHClient from "../../SSHClient/SSHClient";
 const getDeploymentLogController = async ({ params, set, userId }: Context | any) => {
     try {
         const deploymentId = params.id
-        const project = await db.select().from(deployments).where(and(eq(deployments.id, deploymentId), eq(deployments.ownerId, userId)))
+        const project = await db.select({vpsIp:deployments.vpsIp}).from(deployments).where(and(eq(deployments.id, deploymentId), eq(deployments.ownerId, userId)))
         if (!project || project.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {
                 message: "Project not found"
             }
         }
-        const vpsMachine = await db.select().from(vpsMachines).where(and(eq(vpsMachines.vps_ip, project[0].vpsIp), eq(vpsMachines.ownerId, userId)))
+        const vpsMachine = await db.select({
+            vps_ip:vpsMachines.vps_ip,
+            vps_password:vpsMachines.vps_password
+        }).from(vpsMachines).where(and(eq(vpsMachines.vps_ip, project[0].vpsIp), eq(vpsMachines.ownerId, userId)))
         if (!vpsMachine || vpsMachine.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {

@@ -43,7 +43,7 @@ const backupPostgres = async ({ body, set, userId }: Context | any) => {
         await ssh.connect()
         pgHelper = new PostgresSSHHelper(ssh)
         //check if database exists
-        const dbExists = await db.select().from(deployed_db).where(and(eq(deployed_db.dbName, dbName), eq(deployed_db.vpsId, parseInt(vpsId))));
+        const dbExists = await db.select({id:deployed_db.id}).from(deployed_db).where(and(eq(deployed_db.dbName, dbName), eq(deployed_db.vpsId, parseInt(vpsId))));
         if (!dbExists || dbExists.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {

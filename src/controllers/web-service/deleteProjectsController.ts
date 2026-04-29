@@ -20,7 +20,15 @@ const deleteProjectsController = async ({ set, params, userId }: Context | any) 
             }
         }
         console.log("Deleting project with ID:", projectId);
-        const project = await db.select().from(deployments).where(and(eq(deployments.id, projectId), eq(deployments.ownerId, userId))).limit(1);
+        const project = await db.select({
+            vpsIp:deployments.vpsIp,
+            repoUrl:deployments.repoUrl,
+            domain:deployments.domain,
+            subFolder:deployments.subFolder,
+            framework:deployments.framework,
+            projectType:deployments.projectType,
+            deploymentId:deployments.deploymentId
+        }).from(deployments).where(and(eq(deployments.id, projectId), eq(deployments.ownerId, userId))).limit(1);
         if (project.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {

@@ -12,7 +12,12 @@ const deleteDomain = async ({ params, set, userId }: Context | any) => {
             message: "Missing domain ID"
         }
     }
-    const domainExists = await db.select().from(userDomains).where(eq(userDomains.id, parseInt(domainId)));
+    const domainExists = await db
+        .select({
+            ownerId:userDomains.ownerId,
+            isDeployed:userDomains.isDeployed
+        })
+        .from(userDomains).where(eq(userDomains.id, parseInt(domainId)));
     if (domainExists.length === 0) {
         set.status = StatusCode.NOT_FOUND;
         return {

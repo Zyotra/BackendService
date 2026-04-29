@@ -9,7 +9,10 @@ const viewDetails = async ({ params, set }: Context) => {
     var ssh: SSHClient | null = null;
     try {
         const machineId = params.id;
-        const machine = await db.select().from(vpsMachines).where(eq(vpsMachines.id, Number(machineId))).limit(1);
+        const machine = await db.select({
+            vps_password:vpsMachines.vps_password,
+            vps_ip:vpsMachines.vps_ip
+        }).from(vpsMachines).where(eq(vpsMachines.id, Number(machineId))).limit(1);
         set.status = StatusCode.NOT_FOUND
         if (machine.length === 0) {
             return {

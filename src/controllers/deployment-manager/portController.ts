@@ -25,7 +25,10 @@ const getUsedPorts = async ({ params, set, userId }: Context | any) => {
 
     // Verify the machine belongs to the user
     const machines = await db
-        .select()
+        .select({
+            vps_ip:vpsMachines.vps_ip,
+            vps_password:vpsMachines.vps_password
+        })
         .from(vpsMachines)
         .where(and(eq(vpsMachines.ownerId, owner), eq(vpsMachines.id, vpsId)));
 
