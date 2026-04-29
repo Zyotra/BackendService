@@ -6,7 +6,14 @@ import { StatusCode } from "../../types/types";
 
 const getActivityLogsController = async({userId,set}: Context | any) => {
     try {
-        const logs=await db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt)).where(eq(activityLogs.userId,userId)).limit(10);
+        const logs=await db.select({
+            id:activityLogs.id,
+            deploymentId:activityLogs.deploymentId,
+            domain_address:activityLogs.domain_address,
+            userId:activityLogs.userId,
+            log:activityLogs.log,
+            createdAt:activityLogs.createdAt
+        }).from(activityLogs).orderBy(desc(activityLogs.createdAt)).where(eq(activityLogs.userId,userId)).limit(10);
         console.log("Fetched activity logs for user", userId, ":", logs);
         set.status=StatusCode.OK;
         return {

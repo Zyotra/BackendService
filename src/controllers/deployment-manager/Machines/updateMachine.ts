@@ -26,7 +26,7 @@ const updateMachine = async ({ set, body, params, user }: Context | any) => {
         }
     }
 
-    const machineExists = await db.select().from(vpsMachines).where(eq(vpsMachines.id, parseInt(vps_Id)));
+    const machineExists = await db.select({id:vpsMachines.id}).from(vpsMachines).where(eq(vpsMachines.id, parseInt(vps_Id)));
     if (machineExists.length === 0) {
         set.status = StatusCode.NOT_FOUND;
         return {

@@ -8,7 +8,12 @@ import { generateAccessToken, generateRefreshToken } from "../../auth-modules/jw
 const loginController = async ({ body, set, cookie }: Context) => {
     const { email, password } = body as { email: string, password: string };
     try {
-        const user = await db.select().from(users).where(eq(users.email, email));
+        const user = await db
+            .select({
+                id: users.id,
+                password: users.password
+            })
+            .from(users).where(eq(users.email, email));
         if (user.length === 0) {
             set.status = StatusCode.FORBIDDEN;
             return { message: "Invalid email or password" };
@@ -20,7 +25,7 @@ const loginController = async ({ body, set, cookie }: Context) => {
         }
         const accessToken = await generateAccessToken(user[0].id.toString());
         const refreshToken = await generateRefreshToken(user[0].id.toString());
-        const isProd = process.env.NODE_ENV === 'production'? true : false;
+        const isProd = process.env.NODE_ENV === 'production' ? true : false;
         console.log("Is Production Environment:", isProd);
         cookie.refreshToken.set({
             value: refreshToken,

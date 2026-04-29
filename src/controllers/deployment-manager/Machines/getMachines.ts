@@ -12,7 +12,16 @@ const getMachines = async ({ userId, set }: Context | any) => {
         }
     }
     console.log("Fetching machines for user:", userId);
-    const machines = await db.select().from(vpsMachines).where(eq(vpsMachines.ownerId, userId));
+    const machines = await db
+    .select({
+        id:vpsMachines.id,
+        vps_ip:vpsMachines.vps_ip,
+        vps_name:vpsMachines.vps_name,
+        cpu_cores:vpsMachines.cpu_cores,
+        ram:vpsMachines.ram,
+        storage:vpsMachines.storage
+    })
+    .from(vpsMachines).where(eq(vpsMachines.ownerId, userId));
     set.status = StatusCode.OK;
     return {
         status: "success",

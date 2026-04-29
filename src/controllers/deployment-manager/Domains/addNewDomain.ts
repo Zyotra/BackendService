@@ -17,7 +17,7 @@ const addNewDomain = async ({ body, set, userId }: Context | any) => {
         }
     }
     try {
-        const isDomainExists = await db.select().from(userDomains).where(eq(userDomains.domain_address, (req.domainAddress)));
+        const isDomainExists = await db.select({id:userDomains.id}).from(userDomains).where(eq(userDomains.domain_address, (req.domainAddress)));
         if (isDomainExists.length > 0) {
             set.status = StatusCode.BAD_REQUEST;
             return {

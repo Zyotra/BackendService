@@ -12,7 +12,9 @@ const getGithubStatusController = async ({ params, set }: Context | any) => {
             message: "Missing VPS ID"
         }
     }
-    const githubAuth = await db.select().from(githubAuths).where(eq(githubAuths.vpsId, vpsId));
+    const githubAuth = await db.select({
+        github_username:githubAuths.github_username
+    }).from(githubAuths).where(eq(githubAuths.vpsId, vpsId));
     if (githubAuth.length === 0) {
         set.status = StatusCode.NOT_FOUND;
         return {

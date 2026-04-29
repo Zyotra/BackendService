@@ -13,7 +13,13 @@ const getDomains = async ({ userId, set }: Context | any) => {
         }
     }
     try {
-        const domains = await db.select().from(userDomains).where(eq(userDomains.ownerId, userId))
+        const domains = await db.select({
+            id:userDomains.id,
+            domain_address:userDomains.domain_address,
+            vps_ip:userDomains.vps_ip,
+            added_at:userDomains.added_at,
+            isDeployed:userDomains.isDeployed
+        }).from(userDomains).where(eq(userDomains.ownerId, userId))
         set.status = StatusCode.OK;
         return {
             status: "success",

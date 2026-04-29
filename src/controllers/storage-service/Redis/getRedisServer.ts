@@ -6,7 +6,18 @@ import { StatusCode } from "../../../types/types";
 
 const getRedisServer=async({set,userId}:Context|any)=>{
     try {
-        const redisServers=await db.select().from(caching).where(eq(caching.userId,parseInt(userId)))
+        const redisServers=await db.select({
+            id:caching.id,
+            cacheName:caching.cacheName,
+            password:caching.password,
+            host:caching.host,
+            port:caching.port,
+            vpsId:caching.vpsId,
+            cachingType:caching.cachingType,
+            status:caching.status,
+            userId:caching.userId,
+            createdAt:caching.createdAt
+        }).from(caching).where(eq(caching.userId,parseInt(userId)))
         set.status=StatusCode.OK
         return{
             message:"Redis Server Fetched Successfully.",

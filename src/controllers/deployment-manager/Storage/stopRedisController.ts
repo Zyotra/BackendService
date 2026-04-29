@@ -11,7 +11,10 @@ const stopRedisController = async ({ params, set, userId }: Context | any) => {
     var ssh: SSHClient | null = null
     const owner = parseInt(userId);
     const machines = await db
-        .select()
+        .select({
+            vps_ip: vpsMachines.vps_ip,
+            vps_password: vpsMachines.vps_password
+        })
         .from(vpsMachines)
         .where(and(eq(vpsMachines.ownerId, owner), eq(vpsMachines.id, vpsId)));
     if (machines.length == 0) {

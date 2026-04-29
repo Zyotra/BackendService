@@ -17,7 +17,10 @@ const unauthenticateGithubController = async ({ params, userId, set }: Context |
         }
     }
     try {
-        const vps = await db.select().from(vpsMachines).where(and(eq(vpsMachines.id, vpsId), eq(vpsMachines.ownerId, userId)))
+        const vps = await db.select({
+            vps_password:vpsMachines.vps_password,
+            vps_ip:vpsMachines.vps_ip
+        }).from(vpsMachines).where(and(eq(vpsMachines.id, vpsId), eq(vpsMachines.ownerId, userId)))
         if (vps.length === 0) {
             set.status = StatusCode.NOT_FOUND;
             return {

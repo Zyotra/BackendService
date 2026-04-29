@@ -14,7 +14,10 @@ const registerController = async ({ body, set }: Context) => {
     try {
         const result = await db.transaction(async (tx) => {
             const [otpRow] = await tx
-                .select()
+                .select({
+                    id:otps.id,
+                    expiresAt:otps.expiresAt
+                })
                 .from(otps)
                 .where(and(eq(otps.email, email), eq(otps.otp, otp)))
                 .limit(1);

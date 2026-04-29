@@ -10,7 +10,9 @@ const getDeploymentLogController = async ({ params, set, userId }: Context | any
     var ssh:SSHClient | null=null;
     try {
         const deploymentId = params.id
-        const project = await db.select().from(deployments).where(and(eq(deployments.deploymentId, deploymentId), eq(deployments.ownerId, userId)))
+        const project = await db.select({
+            vpsIp:deployments.vpsIp
+        }).from(deployments).where(and(eq(deployments.deploymentId, deploymentId), eq(deployments.ownerId, userId)))
         if (!project || project.length === 0) {
             set.status = StatusCode.NOT_FOUND
             return {

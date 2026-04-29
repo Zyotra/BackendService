@@ -19,7 +19,7 @@ export const generateRefreshToken = async (userId: string): Promise<string> => {
 
     await db.transaction(async (tx) => {
         const existing = await tx
-            .select()
+            .select({id:login_Sessions.id})
             .from(login_Sessions)
             .where(eq(login_Sessions.userId, parseInt(userId)));
 

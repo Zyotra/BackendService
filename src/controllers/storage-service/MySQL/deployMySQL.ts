@@ -8,7 +8,10 @@ import { deployed_db, vpsMachines } from "../../../db/schema";
 import { and, eq } from "drizzle-orm";
 
 export const verifyMachine=async (machineId:string,userId:string,machineIp:string)=>{
-    const res=await db.select().from(vpsMachines).where(and(eq(vpsMachines.id,parseInt(machineId)),eq(vpsMachines.ownerId,parseInt(userId))));
+    const res=await db.select({
+      vps_ip:vpsMachines.vps_ip,
+      vps_password:vpsMachines.vps_password
+    }).from(vpsMachines).where(and(eq(vpsMachines.id,parseInt(machineId)),eq(vpsMachines.ownerId,parseInt(userId))));
     if(res.length<=0){
         return {
             status:false,
