@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db/client";
 import encryptVpsPassword from "../../../crypto/encryptVpsPassword";
 
-const updateMachine = async ({ set, body, params, user }: Context | any) => {
+const updateMachine = async ({ set, body, params, userId }: Context | any) => {
     const vps_Id = params.id;
     const req = body as {
         newVpsPassword?: string,
@@ -34,7 +34,13 @@ const updateMachine = async ({ set, body, params, user }: Context | any) => {
             message: "Machine not found"
         }
     }
-
+    if(machineExists[0].ownerId!==userId){
+        set.status=StatusCode.FORBIDDEN
+        return{
+            status:"error",
+            message:"Invalid Request"
+        }
+    }
     // Prepare dynamic update object
     const updateData: any = {};
 
