@@ -23,16 +23,16 @@ const startRedisController = async ({ params, set, userId }: Context | any) => {
   const vpsMachine = machines[0];
   const hashedPassword = decryptVpsPassword(vpsMachine.vps_password)
   try {
-    const startMysql: string[] = [
-      "sudo systemctl start mysql",
-      "sudo systemctl enable mysql"
+    const startRedis: string[] = [
+      "sudo systemctl start redis-server",
+      "sudo systemctl enable redis-server"
     ];
     ssh = new SSHClient({
       host: vpsMachine.vps_ip,
       username: "root",
       password: hashedPassword
     })
-    await ssh.runSequential(startMysql)
+    await ssh.runSequential(startRedis)
   } catch (error) {
     set.status = StatusCode.INTERNAL_SERVER_ERROR
     return {
