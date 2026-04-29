@@ -13,70 +13,70 @@ async function jsDepedenciesInstaller(ssh: SSHClient): Promise<boolean> {
 
             // Try to install curl and git with maximum compatibility flags
             // --allow-downgrades --allow-remove-essential --allow-change-held-packages for broken systems
-            "sudo apt install curl git -y --no-install-recommends --allow-downgrades --allow-remove-essential --allow-change-held-packages || true",
+            "bash -lc 'if ! command -v curl >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1; then sudo apt install curl git unzip -y --no-install-recommends --allow-downgrades --allow-remove-essential --allow-change-held-packages; fi' || true",
 
             // Install nvm
-            "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash",
+            "bash -lc 'if [ ! -s \"$HOME/.nvm/nvm.sh\" ]; then curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; fi'",
 
             // Add nvm to .bashrc (the installer should do this, but let's be explicit)
-            'echo \'export NVM_DIR="$HOME/.nvm"\' >> $HOME/.bashrc',
-            'echo \'[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\' >> $HOME/.bashrc',
-            'echo \'[ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"\' >> $HOME/.bashrc',
+            'grep -qxF \'export NVM_DIR="$HOME/.nvm"\' $HOME/.bashrc 2>/dev/null || echo \'export NVM_DIR="$HOME/.nvm"\' >> $HOME/.bashrc',
+            'grep -qxF \'[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\' $HOME/.bashrc 2>/dev/null || echo \'[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\' >> $HOME/.bashrc',
+            'grep -qxF \'[ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"\' $HOME/.bashrc 2>/dev/null || echo \'[ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"\' >> $HOME/.bashrc',
 
             // CRITICAL: Add nvm to .profile for non-interactive shells
-            'echo \'export NVM_DIR="$HOME/.nvm"\' >> $HOME/.profile',
-            'echo \'[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\' >> $HOME/.profile',
+            'grep -qxF \'export NVM_DIR="$HOME/.nvm"\' $HOME/.profile 2>/dev/null || echo \'export NVM_DIR="$HOME/.nvm"\' >> $HOME/.profile',
+            'grep -qxF \'[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\' $HOME/.profile 2>/dev/null || echo \'[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\' >> $HOME/.profile',
 
             // CRITICAL: Source .profile in .bashrc for SSH sessions
-            'grep -q "source ~/.profile" $HOME/.bashrc || echo "source ~/.profile" >> $HOME/.bashrc',
+            'grep -qxF \'source ~/.profile\' $HOME/.bashrc 2>/dev/null || echo \'source ~/.profile\' >> $HOME/.bashrc',
 
             // Install Node.js LTS
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && nvm install --lts'",
+            "bash -lc 'if ! command -v node >/dev/null 2>&1; then export NVM_DIR=\"$HOME/.nvm\"; if [ -s \"$NVM_DIR/nvm.sh\" ]; then \\. \"$NVM_DIR/nvm.sh\"; nvm install --lts; fi; fi'",
 
             // Set as default
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && nvm alias default node'",
+            "bash -lc 'if [ -s \"$HOME/.nvm/nvm.sh\" ]; then export NVM_DIR=\"$HOME/.nvm\"; \\. \"$NVM_DIR/nvm.sh\"; nvm alias default node; fi'",
 
             // CRITICAL: Create symlinks so npm/node work everywhere
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && sudo ln -sf \"$(which node)\" /usr/local/bin/node'",
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && sudo ln -sf \"$(which npm)\" /usr/local/bin/npm'",
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && sudo ln -sf \"$(which npx)\" /usr/local/bin/npx'",
+            "bash -lc 'if command -v node >/dev/null 2>&1; then sudo ln -sf \"$(command -v node)\" /usr/local/bin/node; fi'",
+            "bash -lc 'if command -v npm >/dev/null 2>&1; then sudo ln -sf \"$(command -v npm)\" /usr/local/bin/npm; fi'",
+            "bash -lc 'if command -v npx >/dev/null 2>&1; then sudo ln -sf \"$(command -v npx)\" /usr/local/bin/npx; fi'",
 
             // Enable corepack
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && corepack enable'",
+            "bash -lc 'if command -v corepack >/dev/null 2>&1; then corepack enable; fi'",
 
             // Install Yarn
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && corepack prepare yarn@stable --activate'",
+            "bash -lc 'if ! command -v yarn >/dev/null 2>&1 && command -v corepack >/dev/null 2>&1; then corepack prepare yarn@stable --activate; fi'",
 
             // Install pnpm
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && corepack prepare pnpm@latest --activate'",
+            "bash -lc 'if ! command -v pnpm >/dev/null 2>&1 && command -v corepack >/dev/null 2>&1; then corepack prepare pnpm@latest --activate; fi'",
 
             // Create symlinks for yarn and pnpm
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && sudo ln -sf \"$(which yarn)\" /usr/local/bin/yarn'",
-            "bash -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\. \"$NVM_DIR/nvm.sh\" && sudo ln -sf \"$(which pnpm)\" /usr/local/bin/pnpm'",
+            "bash -lc 'if command -v yarn >/dev/null 2>&1; then sudo ln -sf \"$(command -v yarn)\" /usr/local/bin/yarn; fi'",
+            "bash -lc 'if command -v pnpm >/dev/null 2>&1; then sudo ln -sf \"$(command -v pnpm)\" /usr/local/bin/pnpm; fi'",
 
             // Install Bun
-            "curl -fsSL https://bun.sh/install | bash",
-            "sudo ln -sf $HOME/.bun/bin/bun /usr/local/bin/bun",
+            "bash -lc 'if ! command -v bun >/dev/null 2>&1; then curl -fsSL https://bun.sh/install | bash; fi'",
+            "bash -lc 'if [ -x \"$HOME/.bun/bin/bun\" ]; then sudo ln -sf \"$HOME/.bun/bin/bun\" /usr/local/bin/bun; fi'",
 
             // Install global packages
-            "npm install -g typescript ts-node pm2",
+            "bash -lc 'if command -v npm >/dev/null 2>&1; then if [ ! -x \"$(npm root -g)/typescript/bin/tsc\" ] || [ ! -x \"$(npm root -g)/ts-node/dist/bin.js\" ] || [ ! -x \"$(npm root -g)/pm2/bin/pm2\" ]; then npm install -g typescript ts-node pm2; fi; fi'",
 
             // Create symlinks for global packages
-            "sudo ln -sf $(npm root -g)/typescript/bin/tsc /usr/local/bin/tsc",
-            "sudo ln -sf $(npm root -g)/ts-node/dist/bin.js /usr/local/bin/ts-node",
-            "sudo ln -sf $(npm root -g)/pm2/bin/pm2 /usr/local/bin/pm2",
+            "bash -lc 'if [ -x \"$(npm root -g)/typescript/bin/tsc\" ]; then sudo ln -sf \"$(npm root -g)/typescript/bin/tsc\" /usr/local/bin/tsc; fi'",
+            "bash -lc 'if [ -x \"$(npm root -g)/ts-node/dist/bin.js\" ]; then sudo ln -sf \"$(npm root -g)/ts-node/dist/bin.js\" /usr/local/bin/ts-node; fi'",
+            "bash -lc 'if [ -x \"$(npm root -g)/pm2/bin/pm2\" ]; then sudo ln -sf \"$(npm root -g)/pm2/bin/pm2\" /usr/local/bin/pm2; fi'",
             
             // Setup PM2 startup script for auto-restart on server reboot
-            "pm2 startup systemd -u root --hp /root || true",
+            "bash -lc 'if command -v pm2 >/dev/null 2>&1; then pm2 startup systemd -u root --hp /root; fi' || true",
 
             // Install Nginx (non-blocking if fails, since Bun apps don't strictly need it)
-            "sudo apt install nginx -y --no-install-recommends --allow-downgrades --allow-remove-essential --allow-change-held-packages || true",
+            "bash -lc 'if ! command -v nginx >/dev/null 2>&1; then sudo apt install nginx -y --no-install-recommends --allow-downgrades --allow-remove-essential --allow-change-held-packages; fi' || true",
 
             // Start Nginx
-            "sudo systemctl start nginx",
+            "bash -lc 'if command -v systemctl >/dev/null 2>&1 && command -v nginx >/dev/null 2>&1; then sudo systemctl start nginx; fi'",
 
             // Enable Nginx on boot
-            "sudo systemctl enable nginx",
+            "bash -lc 'if command -v systemctl >/dev/null 2>&1 && command -v nginx >/dev/null 2>&1; then sudo systemctl enable nginx; fi'",
 
             // Verify installations
             'echo "Node: $(node -v)"',
