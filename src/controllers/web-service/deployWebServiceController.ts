@@ -17,22 +17,22 @@ import checkDomainValidity from "../../utils/checkDomainValidity"
 import cloneRepo from "../../repoActions/cloneRepo"
 import installDependencies from "../../repoActions/installDepedencies"
 import socketManager from "../../ws/socketManager"
-import { saveLog } from "../../repoActions/saveLog"
+import { flushDeploymentLogs, saveLog } from "../../repoActions/saveLog"
 const deployWebServiceController = async ({ body, set }: Context) => {
     var ssh: SSHClient | null = null;
-
+    var depId:string="";
     const safeSaveLog = async (deploymentId: string, logChunk: string, sshClient: SSHClient | null) => {
         if (!sshClient) return;
         try {
             await saveLog(deploymentId, logChunk, sshClient);
         } catch (error) {
             console.error("Failed to save log:", error instanceof Error ? error.message : String(error));
-            // Don't throw, just log the error and continue
         }
     };
 
     try {
         const { vpsId, repoUrl, deploymentId, packageInstallerCommand, buildCommand, serverFilePath, env, domain, framework, sourceDir } = body as { vpsId: string, repoUrl: string, deploymentId: string, packageInstallerCommand: string, buildCommand: string, serverFilePath: string, env: Record<string, string>, domain: string, webServiceType: string, framework: string, sourceDir?: string };
+        let depId=deploymentId
         if (!vpsId || !repoUrl || !deploymentId || !packageInstallerCommand || !domain || !framework) {
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -40,7 +40,7 @@ const deployWebServiceController = async ({ body, set }: Context) => {
                 message: "Missing required fields"
             }
         }
-        const [isDomainValid,credentials]=await Promise.all([
+        const [isDomainValid, credentials] = await Promise.all([
             checkDomainValidity(domain),
             getCredentials(vpsId)
         ])
@@ -99,7 +99,6 @@ const deployWebServiceController = async ({ body, set }: Context) => {
         if (sourceDir && sourceDir.trim() != "") {
             dirName = `${dirName}/${sourceDir}`;
         }
-        console.log("Starting to clone the repository:", repoUrl + " into " + dirName);
         const isRepoCloned = await cloneRepo(ssh, repoUrl, deploymentId);
         if (!isRepoCloned) {
             await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to clone the repository.", framework, buildCommand, packageInstallerCommand, serverFilePath, sourceDir)
@@ -260,10 +259,9 @@ const deployWebServiceController = async ({ body, set }: Context) => {
     } finally {
         if (ssh) {
             try {
-                // Wait a bit for any pending saveLog operations to complete
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await flushDeploymentLogs(depId, ssh);
                 console.log("[Deploy] Closing SSH connection...");
-                ssh.close();
+                ssh.close()
             } catch (error) {
                 console.error("[Deploy] Error closing SSH connection:", error instanceof Error ? error.message : String(error));
             }
