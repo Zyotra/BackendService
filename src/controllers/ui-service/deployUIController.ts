@@ -21,7 +21,7 @@ const frontendProjectTypes = ["react", "vue", "angular", "svelte", "nextjs", "nu
 const deployUIController = async ({ body, set }: Context) => {
     var ssh: SSHClient | null = null;
     try {
-        const { vpsId, repoUrl, deploymentId, packageInstallerCommand, buildCommand, outDir, env, domain, framework,sourceDir } = body as { vpsId: string, repoUrl: string, deploymentId: string, packageInstallerCommand: string, buildCommand: string, outDir: string, env: Record<string, string>, domain: string, webServiceType: string, framework: string,sourceDir:string };
+        const { vpsId, repoUrl, deploymentId, packageInstallerCommand, buildCommand, outDir, env, domain, framework, sourceDir } = body as { vpsId: string, repoUrl: string, deploymentId: string, packageInstallerCommand: string, buildCommand: string, outDir: string, env: Record<string, string>, domain: string, webServiceType: string, framework: string, sourceDir: string };
         if (!vpsId || !repoUrl || !deploymentId || !packageInstallerCommand || !domain || !framework) {
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -36,9 +36,11 @@ const deployUIController = async ({ body, set }: Context) => {
                 message: "Invalid project type for UI deployment."
             }
         }
-        console.log("Starting deployment for deploymentId:", deploymentId)
-        const isDomainValid = await checkDomainValidity(domain);
-        console.log("Domain validity check for", domain, ":", isDomainValid)
+        const [isDomainValid, credentials] = await Promise.all([
+            checkDomainValidity(domain),
+            getCredentials(vpsId)
+        ])
+
         if (!isDomainValid) {
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -46,8 +48,6 @@ const deployUIController = async ({ body, set }: Context) => {
                 message: "The provided domain is not available.Domain might be already linked or invalid."
             }
         }
-        const credentials = await getCredentials(vpsId)
-        console.log("Credentials fetched:", credentials)
         if (!credentials) {
             set.status = StatusCode.NOT_FOUND
             return {
@@ -76,7 +76,7 @@ const deployUIController = async ({ body, set }: Context) => {
             }
         }
         let dirName = getRepoName(repoUrl);
-        if(sourceDir && sourceDir.trim()!=""){
+        if (sourceDir && sourceDir.trim() != "") {
             dirName = `${dirName}/${sourceDir}`;
         }
         console.log("Starting to clone the repository:", repoUrl + " into " + dirName);
@@ -108,18 +108,18 @@ const deployUIController = async ({ body, set }: Context) => {
         console.log("Starting to build the repository with build command:", buildCommand + " cloned at " + dirName);
         if (framework.toLowerCase() == "plainhtml" || framework.toLowerCase() == "htmlcssjs" || framework.toLowerCase() == "html") {
             const isRepoCopied = await copyAssets(ssh, dirName, "", deploymentId);
-        if (!isRepoCopied) {
-            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
-            await cleanDirectory(ssh, getRepoName(repoUrl))
-            await cleanDirectory(ssh, `/var/www/${dirName}`)
-            set.status = StatusCode.INTERNAL_SERVER_ERROR
-            return {
-                status: "error",
-                message: "Failed to copy build assets to the deployment directory."
+            if (!isRepoCopied) {
+                await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
+                await cleanDirectory(ssh, getRepoName(repoUrl))
+                await cleanDirectory(ssh, `/var/www/${dirName}`)
+                set.status = StatusCode.INTERNAL_SERVER_ERROR
+                return {
+                    status: "error",
+                    message: "Failed to copy build assets to the deployment directory."
+                }
             }
-        }
         } else {
-            const isRepoBuilt = await buildRepo(ssh, repoUrl, deploymentId, packageInstallerCommand,dirName, buildCommand);
+            const isRepoBuilt = await buildRepo(ssh, repoUrl, deploymentId, packageInstallerCommand, dirName, buildCommand);
             if (!isRepoBuilt) {
                 await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to build the repository. Check build command and logs.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
                 await cleanDirectory(ssh, getRepoName(repoUrl))
@@ -129,19 +129,19 @@ const deployUIController = async ({ body, set }: Context) => {
                     message: "Failed to build repository. Please check the build command."
                 }
             }
-        
-        const isRepoCopied = await copyAssets(ssh, dirName, outDir, deploymentId);
-        if (!isRepoCopied) {
-            await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
-            await cleanDirectory(ssh, getRepoName(repoUrl))
-            await cleanDirectory(ssh, `/var/www/${getRepoName(repoUrl)}`)
-            set.status = StatusCode.INTERNAL_SERVER_ERROR
-            return {
-                status: "error",
-                message: "Failed to copy build assets to the deployment directory."
+
+            const isRepoCopied = await copyAssets(ssh, dirName, outDir, deploymentId);
+            if (!isRepoCopied) {
+                await saveActivity(credentials.ownerId, deploymentId, vpsIp, domain, "FAILED", repoUrl, "Failed to copy build assets to the deployment directory.", framework, buildCommand, packageInstallerCommand, "", sourceDir, "UI")
+                await cleanDirectory(ssh, getRepoName(repoUrl))
+                await cleanDirectory(ssh, `/var/www/${getRepoName(repoUrl)}`)
+                set.status = StatusCode.INTERNAL_SERVER_ERROR
+                return {
+                    status: "error",
+                    message: "Failed to copy build assets to the deployment directory."
+                }
             }
         }
-    }
         const nginxConfig = getServerConfigFrontend(domain, dirName);
         const isNginxConfigInjected = await injectNginxConfig(ssh, nginxConfig, domain, deploymentId);
         if (!isNginxConfigInjected) {
