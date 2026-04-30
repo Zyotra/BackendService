@@ -40,8 +40,10 @@ const deployWebServiceController = async ({ body, set }: Context) => {
                 message: "Missing required fields"
             }
         }
-        const isDomainValid = await checkDomainValidity(domain);
-        console.log("Domain validity check for", domain, ":", isDomainValid)
+        const [isDomainValid,credentials]=await Promise.all([
+            checkDomainValidity(domain),
+            getCredentials(vpsId)
+        ])
         if (!isDomainValid) {
             set.status = StatusCode.BAD_REQUEST
             return {
@@ -49,8 +51,6 @@ const deployWebServiceController = async ({ body, set }: Context) => {
                 message: "The provided domain is not available.Domain might be already linked or invalid."
             }
         }
-        const credentials = await getCredentials(vpsId)
-        console.log("Credentials fetched:", credentials)
         if (!credentials) {
             set.status = StatusCode.NOT_FOUND
             return {
