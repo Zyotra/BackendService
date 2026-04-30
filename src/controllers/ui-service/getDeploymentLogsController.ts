@@ -4,6 +4,7 @@ import { deployments, vpsMachines } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
 import { StatusCode } from "../../types/types";
 import SSHClient from "../../SSHClient/SSHClient";
+import decryptVpsPassword from "@/crypto/decryptVpsPassword";
 
 const getDeploymentLogController = async ({ params, set, userId }: Context | any) => {
     try {
@@ -25,11 +26,13 @@ const getDeploymentLogController = async ({ params, set, userId }: Context | any
                 message: "VPS Machine not found"
             }
         }
+        const hashedPassword=await decryptVpsPassword(vpsMachine[0].vps_password)
         const ssh = new SSHClient({
             username: "root",
             host: vpsMachine[0].vps_ip,
-            password: vpsMachine[0].vps_password
+            password: hashedPassword
         })
+        await ssh.connect();
         const log = await ssh.exec(`cat $HOME/logs/ui-logs/${deploymentId}.log`)
         set.status = StatusCode.OK
         return {
