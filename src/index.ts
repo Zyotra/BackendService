@@ -66,7 +66,7 @@ import { publicRateLimitPlugin, authRateLimitPlugin } from "./middlewares/rateLi
 
 const app = new Elysia()
 app.use(cors({
-  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud", "https://portal.zyotra.com", "https://zyotra.com"],
+  origin: ["http://localhost:5173", "https://zyotraportal.ramkrishna.cloud", "https://portal.zyotra.com", "https://zyotra.com","https://user-portal-54m5.vercel.app/"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
