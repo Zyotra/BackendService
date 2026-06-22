@@ -25,7 +25,7 @@ const loginController = async ({ body, set, cookie }: Context) => {
         }
         const accessToken = await generateAccessToken(user[0].id.toString());
         const refreshToken = await generateRefreshToken(user[0].id.toString());
-        const isProd = process.env.NODE_ENV === 'production' ? true : false;
+        const isProd = true
         console.log("Is Production Environment:", isProd);
         cookie.refreshToken.set({
             value: refreshToken,
