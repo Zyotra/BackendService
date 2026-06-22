@@ -2,8 +2,12 @@ import Elysia, { Context } from "elysia";
 import { verifyAccessToken } from "../jwt/verifyTokens";
 import { StatusCode } from "../types/types";
 
-const checkAuth = new Elysia().derive(async ({ headers, set,cookie }: Context) => {
-   const token=cookie.accessToken.value as string;
+const checkAuth = new Elysia().derive(async ({ headers, set, cookie }: Context) => {
+   const authHeader = headers.authorization || (headers as any).Authorization;
+   const bearerToken = typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+     ? authHeader.slice(7).trim()
+     : undefined;
+   const token = bearerToken || (cookie.accessToken.value as string);
    if(!token){
     set.status = StatusCode.EXPIRED_TOKEN
     return {
