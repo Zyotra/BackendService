@@ -42,7 +42,7 @@ const loginController = async ({ body, set, cookie }: Context) => {
             httpOnly: true,
             secure: isProd,
             sameSite: isProd ? 'none' : 'lax',
-            domain: isProd ? "zyotra.com" : undefined,
+            domain: isProd ? "zyotrabackend.yadavram.com.np" : undefined,
             path: '/',
             maxAge: 15 * 60,
         });
